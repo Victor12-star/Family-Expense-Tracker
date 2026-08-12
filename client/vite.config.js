@@ -1,5 +1,7 @@
 // =====================================================================
-// Vite config — proxies /api to the backend in dev (avoids CORS)
+// Vite config
+// In development, proxies /api to the local backend (localhost:5000).
+// In production, the API URL comes from VITE_API_URL (Render backend).
 // =====================================================================
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -8,6 +10,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // During development, forward /api to the local backend
     proxy: {
       "/api": {
         target: "http://localhost:5000",
