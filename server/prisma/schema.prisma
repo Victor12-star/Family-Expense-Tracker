@@ -1,0 +1,160 @@
+// =====================================================================
+// Family Finance — Database Schema (Prisma + PostgreSQL)
+// =====================================================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------
+// AUTH & USERS
+// ----------------------------------------------------------------
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String // bcrypt hash — never store plaintext
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  memberships  Membership[]
+  expenses     Expense[]
+  sentMessages ChatMessage[]
+}
+
+// ----------------------------------------------------------------
+// FAMILIES, MEMBERSHIPS & ROLES
+// ----------------------------------------------------------------
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  inviteCode String  @unique
+  createdAt DateTime @default(now())
+
+  members    Membership[]
+  expenses   Expense[]
+  reminders  Reminder[]
+  shopping   ShoppingItem[]
+  activities Activity[]
+  chat       ChatMessage[]
+}
+
+// Role: OWNER > ADMIN > MEMBER
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  familyId  String
+  role      Role     @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, familyId])
+}
+
+// ----------------------------------------------------------------
+// EXPENSES & BUDGETS
+// ----------------------------------------------------------------
+model Expense {
+  id        String  @id @default(cuid())
+  familyId  String
+  userId    String  // who added it
+  name      String
+  amount    Decimal @db.Decimal(10, 2)
+  currency  String  @default("SEK")
+  category  String
+  note      String?
+  date      DateTime
+  isPrivate Boolean @default(false) // privacy: only visible to the owner
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([familyId])
+  @@index([userId])
+}
+
+// ----------------------------------------------------------------
+// REMINDERS & CALENDAR
+// ----------------------------------------------------------------
+model Reminder {
+  id        String   @id @default(cuid())
+  familyId  String
+  userId    String
+  title     String
+  date      DateTime
+  time      String?
+  repeat    String   @default("NONE") // NONE | DAILY | WEEKLY | MONTHLY
+  type      String   @default("REMINDER")
+  notified  Boolean  @default(false)
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------------------
+// SHOPPING & ACTIVITIES
+// ----------------------------------------------------------------
+model ShoppingItem {
+  id         String  @id @default(cuid())
+  familyId   String
+  userId     String
+  name       String
+  done       Boolean @default(false)
+  assigneeId String?
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id         String   @id @default(cuid())
+  familyId   String
+  userId     String
+  title      String
+  assigneeId String?
+  dueDate    DateTime?
+  done       Boolean  @default(false)
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------------------
+// FAMILY CHAT
+// ----------------------------------------------------------------
+model ChatMessage {
+  id        String   @id @default(cuid())
+  familyId  String
+  userId    String
+  message   String
+  isVoice   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// ----------------------------------------------------------------
+// REFRESH TOKENS — server-side, revocable
+// Storing refresh tokens in the DB allows revocation & rotation
+// ----------------------------------------------------------------
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique // we store a HASH, not the raw token
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
