@@ -1,4 +1,6 @@
-
+// =====================================================================
+// Consistent API error shape — never leaks internals to clients
+// =====================================================================
 export class ApiError extends Error {
   constructor(status, message, code = undefined, details = undefined) {
     super(message);

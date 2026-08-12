@@ -1,4 +1,6 @@
-
+// =====================================================================
+// Structured logger — JSON in production for machine parsing
+// =====================================================================
 const isProd = (process.env.NODE_ENV || "development") === "production";
 
 function write(level, msg, meta) {

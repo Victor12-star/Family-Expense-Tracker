@@ -1,4 +1,6 @@
-
+// =====================================================================
+// Reminder routes
+// =====================================================================
 import { Router } from "express";
 import { body } from "express-validator";
 import { requireAuth } from "../middleware/auth.js";
@@ -13,13 +15,13 @@ router.use("/:familyId", requireFamilyMember);
 router.get("/:familyId", getReminders);
 
 router.post(
-    "/:familyId",
-    validate([
+  "/:familyId",
+  validate([
     body("title").trim().isLength({ min: 1 }).withMessage("Title is required"),
     body("date").isISO8601().withMessage("Valid date required"),
     body("time").optional(),
-    ]),
-    addReminder
+  ]),
+  addReminder
 );
 
 router.put("/:id", editReminder);

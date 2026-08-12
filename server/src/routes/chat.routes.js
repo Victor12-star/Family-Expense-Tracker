@@ -1,4 +1,6 @@
-
+// =====================================================================
+// Chat routes
+// =====================================================================
 import { Router } from "express";
 import { body } from "express-validator";
 import { requireAuth } from "../middleware/auth.js";

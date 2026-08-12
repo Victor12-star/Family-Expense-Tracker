@@ -1,4 +1,6 @@
-
+// =====================================================================
+// Central error handler — safe, consistent responses, no info leaks
+// =====================================================================
 import { ApiError } from "../utils/apiError.js";
 import { logger } from "../utils/logger.js";
 

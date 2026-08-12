@@ -1,12 +1,14 @@
-
+// =====================================================================
+// Shopping & Activities routes
+// =====================================================================
 import { Router } from "express";
 import { body } from "express-validator";
 import { requireAuth } from "../middleware/auth.js";
 import { requireFamilyMember } from "../middleware/authorize.js";
 import { validate } from "../middleware/validate.js";
 import {
-    getShopping, addShoppingItem, toggleItem, removeShoppingItem,
-    getActivities, addActivity, toggle,
+  getShopping, addShoppingItem, toggleItem, removeShoppingItem,
+  getActivities, addActivity, toggle,
 } from "../controllers/shopping.controller.js";
 
 const router = Router();

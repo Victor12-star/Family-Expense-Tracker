@@ -1,3 +1,6 @@
+// =====================================================================
+// Validation middleware — validates/sanitizes input before controllers
+// =====================================================================
 import { validationResult } from "express-validator";
 import { createError } from "../utils/apiError.js";
 
