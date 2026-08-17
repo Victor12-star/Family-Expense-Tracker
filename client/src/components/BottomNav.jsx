@@ -9,6 +9,8 @@ const items = [
   { to: "/calendar", icon: "📅", label: "Calendar" },
   { to: "/shopping", icon: "🛒", label: "Shopping" },
   { to: "/chat", icon: "💬", label: "Chat" },
+  { to: "/family", icon: "👨‍👩‍👧‍👦", label: "Family" },
+  { to: "/settings", icon: "⚙️", label: "Settings" },
 ];
 
 export default function BottomNav() {
