@@ -9,6 +9,8 @@ const prisma = new PrismaClient();
 
 const ROLE_RANK = { OWNER: 3, ADMIN: 2, MEMBER: 1 };
 
+const familyId = req.params.familyId || req.params.id || req.body.familyId;
+
 // Checks the user belongs to the family in the request params/body
 export async function requireFamilyMember(req, _res, next) {
   try {
