@@ -1,6 +1,4 @@
-// =====================================================================
-// Family page — create/join family, view members, lifetime invite link
-// =====================================================================
+
 import { useState } from "react";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { api } from "../api/client.js";
@@ -10,20 +8,40 @@ export default function Family() {
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState("");
+  const [error, setError] = useState("");
 
   async function createFamily(e) {
     e.preventDefault();
-    const res = await api.post("/families", { name: familyName });
-    await loadFamily(res.data.id);
+    setError("");
+    if (!familyName.trim()) {
+      setError("Please enter a family name.");
+      return;
+    }
+    try {
+      const res = await api.post("/families", { name: familyName.trim() });
+      await loadFamily(res.data.id);
+      setFamilyName("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not create family.");
+    }
   }
 
   async function joinFamily(e) {
     e.preventDefault();
-    const res = await api.post("/families/join", { inviteCode });
-    await loadFamily(res.data.id);
+    setError("");
+    if (!inviteCode.trim()) {
+      setError("Please enter an invite code.");
+      return;
+    }
+    try {
+      const res = await api.post("/families/join", { inviteCode: inviteCode.trim() });
+      await loadFamily(res.data.id);
+      setInviteCode("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not join family.");
+    }
   }
 
-  // The lifetime invite link (uses the family's permanent invite code)
   const inviteLink = `${window.location.origin}/join/${family?.inviteCode || ""}`;
 
   function copyText(text, which) {
@@ -35,6 +53,8 @@ export default function Family() {
   return (
     <div className="page">
       <div className="page-head"><h2>Family</h2></div>
+
+      {error && <div className="error-banner">{error}</div>}
 
       {!family && (
         <>
@@ -59,12 +79,8 @@ export default function Family() {
       {family && (
         <div className="card">
           <h3>{family.name}</h3>
-
-          {/* Lifetime invite */}
           <div className="invite-box">
-            <p className="subtitle">
-              🔗 <strong>Invite link (stays valid forever)</strong> — share this with family members:
-            </p>
+            <p className="subtitle">🔗 <strong>Invite link (stays valid forever)</strong> — share this with family members:</p>
             <div className="invite-row">
               <input className="invite-link-input" readOnly value={inviteLink} />
               <button className="btn secondary" onClick={() => copyText(inviteLink, "link")}>
@@ -77,9 +93,7 @@ export default function Family() {
                 {copied === "code" ? "✅ Copied!" : "📋 Copy code"}
               </button>
             </div>
-            <p className="subtitle">Anyone with this link/code can join your family, any time.</p>
           </div>
-
           <h4 style={{ margin: "16px 0 8px" }}>Members</h4>
           {family.members?.map((m) => (
             <div className="list-item" key={m.id}>
