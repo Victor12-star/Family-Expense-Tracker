@@ -20,7 +20,7 @@ export async function requireFamilyMember(req, _res, next) {
     });
     if (!membership) return next(createError(403, "Not a member of this family", "FORBIDDEN"));
 
-    req.membership = membership;
+    req.membership = membership; // attach role for later checks
     return next();
   } catch (err) {
     return next(err);

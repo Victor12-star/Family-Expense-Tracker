@@ -1,3 +1,6 @@
+// =====================================================================
+// Environment config loader — validates required vars & fails fast
+// =====================================================================
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -26,6 +29,7 @@ export const env = {
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || "1000", 10),
 };
 
+// Refuse to run in production with placeholder secrets
 if (isProd) {
   const weak = [env.accessTokenSecret, env.refreshTokenSecret];
   if (weak.some((s) => s.startsWith("change_me"))) {
