@@ -1,3 +1,6 @@
+// =====================================================================
+// AuthContext — manages login state and token storage
+// =====================================================================
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api, setTokens, clearTokens } from "../api/client.js";
 
@@ -7,32 +10,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On load: try to restore the session using the stored refresh token
   useEffect(() => {
-    const refreshToken = localStorage.getItem("fet_refresh");
-
-    // If no refresh token, user is not logged in
-    if (!refreshToken) {
-      setLoading(false);
-      return;
-    }
-
-    // Try to refresh the access token using the stored refresh token
-    // This keeps the user signed in across page reloads
-    async function restoreSession() {
-      try {
-        const { data } = await api.post("/auth/refresh", { refreshToken });
-        setTokens(data);
-        setUser(data.user);
-      } catch (_) {
-        // Refresh failed — clear tokens and sign out
-        clearTokens();
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    restoreSession();
+    api
+      .get("/auth/me")
+      .then((res) => setUser(res.data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email, password) => {

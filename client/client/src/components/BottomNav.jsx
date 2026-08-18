@@ -1,3 +1,6 @@
+// =====================================================================
+// BottomNav — mobile bottom navigation (shown on small screens only)
+// =====================================================================
 import { NavLink } from "react-router-dom";
 
 const items = [

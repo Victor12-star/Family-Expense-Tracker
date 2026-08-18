@@ -322,7 +322,6 @@ body {
   display: flex; justify-content: space-around; padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
   background: rgba(11, 16, 32, 0.95); border-top: 1px solid var(--border);
 }
-
 .bn-item {
   flex: 1;
   min-width: 0;
