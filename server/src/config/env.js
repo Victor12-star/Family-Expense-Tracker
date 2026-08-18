@@ -1,6 +1,3 @@
-// =====================================================================
-// Environment config loader — validates required vars & fails fast
-// =====================================================================
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -26,10 +23,9 @@ export const env = {
   accessTokenTtl: process.env.ACCESS_TOKEN_TTL || "15m",
   refreshTokenTtlDays: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS || "30", 10),
   rateLimitWindowMin: parseInt(process.env.RATE_LIMIT_WINDOW_MIN || "15", 10),
-  rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || "100", 10),
+  rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || "1000", 10),
 };
 
-// Refuse to run in production with placeholder secrets
 if (isProd) {
   const weak = [env.accessTokenSecret, env.refreshTokenSecret];
   if (weak.some((s) => s.startsWith("change_me"))) {
