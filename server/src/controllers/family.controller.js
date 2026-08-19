@@ -1,8 +1,5 @@
-// =====================================================================
-// Family controller
-// =====================================================================
 import {
-  createFamily, getFamily, joinFamily, setMemberRole, removeMember,
+  createFamily, getFamily, joinFamily, setMemberRole, removeMember, getUserFamilies,
 } from "../services/family.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -14,6 +11,13 @@ export const create = asyncHandler(async (req, res) => {
 export const get = asyncHandler(async (req, res) => {
   const family = await getFamily(req.params.id);
   res.json(family);
+});
+
+// Get the current user's families (so the app can auto-load on login)
+export const my = asyncHandler(async (req, res) => {
+  const memberships = await getUserFamilies(req.user.id);
+  const families = memberships.map((m) => m.family);
+  res.json(families);
 });
 
 export const join = asyncHandler(async (req, res) => {

@@ -62,3 +62,11 @@ export async function removeMember({ familyId, targetUserId }) {
     where: { userId_familyId: { userId: targetUserId, familyId } },
   });
 }
+
+// Get the user's families (the ones they are a member of)
+export async function getUserFamilies(userId) {
+  return prisma.membership.findMany({
+    where: { userId },
+    include: { family: { include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } } } },
+  });
+}
