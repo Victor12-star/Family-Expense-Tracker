@@ -1,12 +1,11 @@
-// =====================================================================
-// Family page — create/join family, view members, lifetime invite link
-// =====================================================================
 import { useState } from "react";
 import { useFamily } from "../context/FamilyContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 
 export default function Family() {
   const { family, loadFamily } = useFamily();
+  const { user } = useAuth();
   const [familyName, setFamilyName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState("");
@@ -23,7 +22,12 @@ export default function Family() {
     await loadFamily(res.data.id);
   }
 
-  // The lifetime invite link (uses the family's permanent invite code)
+  // Check if the current user is the OWNER of this family
+  const isOwner = family?.members?.some(
+    (m) => m.userId === user?.id && m.role === "OWNER"
+  );
+
+  // The lifetime invite link (only the owner sees this)
   const inviteLink = `${window.location.origin}/join/${family?.inviteCode || ""}`;
 
   function copyText(text, which) {
@@ -60,25 +64,27 @@ export default function Family() {
         <div className="card">
           <h3>{family.name}</h3>
 
-          {/* Lifetime invite */}
-          <div className="invite-box">
-            <p className="subtitle">
-              🔗 <strong>Invite link (stays valid forever)</strong> — share this with family members:
-            </p>
-            <div className="invite-row">
-              <input className="invite-link-input" readOnly value={inviteLink} />
-              <button className="btn secondary" onClick={() => copyText(inviteLink, "link")}>
-                {copied === "link" ? "✅ Copied!" : "🔗 Copy link"}
-              </button>
+          {/* Only the OWNER sees the invite link/code */}
+          {isOwner && (
+            <div className="invite-box">
+              <p className="subtitle">
+                🔗 <strong>Invite link (stays valid forever)</strong> — share this with family members:
+              </p>
+              <div className="invite-row">
+                <input className="invite-link-input" readOnly value={inviteLink} />
+                <button className="btn secondary" onClick={() => copyText(inviteLink, "link")}>
+                  {copied === "link" ? "✅ Copied!" : "🔗 Copy link"}
+                </button>
+              </div>
+              <div className="invite-row">
+                <code className="invite-code">{family.inviteCode}</code>
+                <button className="btn secondary" onClick={() => copyText(family.inviteCode, "code")}>
+                  {copied === "code" ? "✅ Copied!" : "📋 Copy code"}
+                </button>
+              </div>
+              <p className="subtitle">Only the family owner can generate the invite link.</p>
             </div>
-            <div className="invite-row">
-              <code className="invite-code">{family.inviteCode}</code>
-              <button className="btn secondary" onClick={() => copyText(family.inviteCode, "code")}>
-                {copied === "code" ? "✅ Copied!" : "📋 Copy code"}
-              </button>
-            </div>
-            <p className="subtitle">Anyone with this link/code can join your family, any time.</p>
-          </div>
+          )}
 
           <h4 style={{ margin: "16px 0 8px" }}>Members</h4>
           {family.members?.map((m) => (

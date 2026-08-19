@@ -51,7 +51,7 @@ export default function Dashboard() {
           {/* Large app logo */}
           <img src="/logo.png" alt="Family Expense Tracker logo" className="dash-logo" />
           <div>
-            <h2>Good day, {user?.name} 👋</h2>
+            <h2>Good day {user?.name} </h2>
             <p className="subtitle">{view === "family" ? "Family view" : "Individual view"}</p>
           </div>
         </div>
