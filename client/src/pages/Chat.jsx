@@ -28,6 +28,7 @@ export default function Chat() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
+  const recordStartRef = useRef(null); // timestamp when recording started
   const bottomRef = useRef(null);
 
   const USER_COLORS = ["#38bdf8", "#818cf8", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
@@ -155,18 +156,30 @@ export default function Chat() {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
+        // Calculate the recording length in whole seconds
+        const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
+        const durationSec = Math.round(durationMs / 1000);
+        recordStartRef.current = null;
         if (blob.size > 0) {
           const reader = new FileReader();
           reader.onload = async () => {
             try {
-              await api.post(`/chat/${family.id}`, { message: reader.result, isVoice: true });
+              await api.post(`/chat/${family.id}`, {
+                message: reader.result,
+                isVoice: true,
+                duration: durationSec,
+              });
               await loadMessages();
-            } catch (_) {}
+            } catch (err) {
+              console.error("Voice send failed:", err);
+              alert("Voice message failed to send.");
+            }
           };
           reader.readAsDataURL(blob);
         }
       };
 
+      recordStartRef.current = Date.now(); // mark the moment recording began
       recorder.start();
       setRecording(true);
     } catch (err) {
@@ -258,7 +271,10 @@ export default function Chat() {
                       {isSystem ? "💰 Expense" : m.user?.name}
                     </div>
                     {isVoice ? (
-                      <audio controls src={m.message} className="chat-audio">Your browser does not support audio.</audio>
+                      <div className="voice-msg">
+                        <audio controls src={m.message} className="chat-audio">Your browser does not support audio.</audio>
+                        {m.duration > 0 && <span className="voice-duration">{m.duration}s</span>}
+                      </div>
                     ) : isImage ? (
                       <img src={m.message} alt="Shared in chat" className="chat-image" />
                     ) : (

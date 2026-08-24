@@ -13,6 +13,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     familyId: req.params.familyId,
     message: req.body.message,
     isVoice: req.body.isVoice,
+    duration: req.body.duration,
   });
   res.status(201).json(message);
 });

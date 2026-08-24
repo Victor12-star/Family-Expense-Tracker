@@ -14,9 +14,15 @@ export async function listMessages(familyId, limit = 100) {
   });
 }
 
-export async function createMessage({ userId, familyId, message, isVoice }) {
+export async function createMessage({ userId, familyId, message, isVoice, duration }) {
   return prisma.chatMessage.create({
-    data: { userId, familyId, message, isVoice: isVoice === true },
+    data: {
+      userId,
+      familyId,
+      message,
+      isVoice: isVoice === true,
+      duration: isVoice === true ? (duration || 0) : 0, // only store duration for voice
+    },
     include: { user: { select: { name: true } } },
   });
 }

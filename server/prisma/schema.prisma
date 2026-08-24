@@ -138,6 +138,7 @@ model ChatMessage {
   userId    String
   message   String
   isVoice   Boolean  @default(false)
+  duration  Int      @default(0) // seconds, only for voice messages
   createdAt DateTime @default(now())
 
   family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
