@@ -10,9 +10,9 @@ router.use(requireAuth);
 router.use("/:familyId", requireFamilyMember);
 
 router.get("/:familyId", getMessages);
-// Text messages are capped at 2000 chars. Voice messages are base64 audio data
-// (much larger), so we allow them up to ~6MB. The `message` column is Postgres `text`,
-// so it can hold the audio data URI safely.
+// Text messages are capped at 2000 chars. Voice messages (base64 audio) and photo
+// messages (base64 images) are much larger, so we allow them up to ~6MB. The
+// `message` column is Postgres `text`, so it can hold the data URI safely.
 router.post(
   "/:familyId",
   validate([
@@ -20,9 +20,15 @@ router.post(
     body("message")
       .custom((msg, { req }) => {
         const isVoice = req.body?.isVoice === true;
-        const limit = isVoice ? 6_000_000 : 2000;
+        const isImage = typeof msg === "string" && msg.startsWith("data:image");
+        // Large data-URI media (audio / photo) gets a bigger budget; plain text stays capped.
+        const limit = isVoice || isImage ? 6_000_000 : 2000;
         if (msg.length > limit) {
-          throw new Error(isVoice ? "Voice message too large" : "Message too long (max 2000 chars)");
+          throw new Error(
+            isVoice ? "Voice message too large"
+              : isImage ? "Photo too large"
+              : "Message too long (max 2000 chars)"
+          );
         }
         return true;
       }),

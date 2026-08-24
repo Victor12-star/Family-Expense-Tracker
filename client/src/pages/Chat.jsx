@@ -22,9 +22,12 @@ export default function Chat() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showAttach, setShowAttach] = useState(false); // camera / gallery menu
   const [recording, setRecording] = useState(false);
 
-  const photoInputRef = useRef(null);
+  // Two hidden file inputs: one forces the phone camera, one opens the gallery.
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -120,19 +123,51 @@ export default function Chat() {
     } catch (_) {}
   }
 
-  // Handle photo/file upload
-  function handleFile(e) {
+  // Downscale + compress an image so it uploads quickly and stays small.
+  // Phone photos can be several MB; we shrink them to a max dimension and
+  // JPEG quality that keeps them reliable in the chat.
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1280; // longest side in px
+        let { width, height } = img;
+        if (width > height && width > MAX) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        } else if (height > MAX) {
+          width = Math.round((width * MAX) / height);
+          height = MAX;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        // JPEG at 0.75 quality is a good balance of size and clarity
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // Handle photo/file upload (from camera or gallery)
+  async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file || !family) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        await api.post(`/chat/${family.id}`, { message: reader.result });
-        await loadMessages();
-      } catch (_) {}
-      e.target.value = "";
-    };
-    reader.readAsDataURL(file);
+    setShowAttach(false);
+    try {
+      const dataUrl = await compressImage(file);
+      await api.post(`/chat/${family.id}`, { message: dataUrl });
+      await loadMessages();
+    } catch (err) {
+      console.error("Photo upload failed:", err);
+      alert("Photo failed to send.");
+    } finally {
+      e.target.value = ""; // allow re-selecting the same file next time
+    }
   }
 
   // ---- PRESS-AND-HOLD VOICE RECORDING ----
@@ -316,9 +351,45 @@ export default function Chat() {
           <form className="chat-input" onSubmit={send}>
             <button type="button" className="chat-tool-btn" onClick={() => setShowEmoji(!showEmoji)} title="Emoji">😀</button>
 
-            {/* Photo button */}
-            <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-            <button type="button" className="chat-tool-btn" onClick={() => photoInputRef.current?.click()} title="Photo">📷</button>
+            {/* Camera / gallery button */}
+            {/* capture="environment" opens the phone's rear camera directly */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={handleFile}
+            />
+            {/* No capture attribute -> opens the gallery / file picker */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleFile}
+            />
+            <button
+              type="button"
+              className="chat-tool-btn"
+              onClick={() => setShowAttach(!showAttach)}
+              title="Attach photo"
+              aria-haspopup="true"
+              aria-expanded={showAttach}
+            >
+              📷
+            </button>
+
+            {showAttach && (
+              <div className="attach-menu" role="menu" aria-label="Add photo">
+                <button type="button" className="attach-item" role="menuitem" onClick={() => cameraInputRef.current?.click()}>
+                  📸 Take Photo
+                </button>
+                <button type="button" className="attach-item" role="menuitem" onClick={() => galleryInputRef.current?.click()}>
+                  🖼️ Choose from Gallery
+                </button>
+              </div>
+            )}
 
             {/* Press-and-hold voice button */}
             <button

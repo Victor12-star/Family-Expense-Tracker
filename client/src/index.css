@@ -1416,3 +1416,55 @@ html.a11y-motion *::after {
 .chat-msg.system .cb-name {
   color: #059669;
 }
+
+/* ============ CAMERA / GALLERY ATTACH MENU ============ */
+/* A small menu that pops up above the input bar with camera + gallery choices. */
+.chat-input {
+  position: relative;
+}
+
+.attach-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  z-index: 30;
+  min-width: 190px;
+}
+
+.attach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.attach-item:hover {
+  background: #f1f5f9;
+}
+
+.attach-item:active {
+  transform: scale(0.98);
+}
+
+/* Keep the attach menu on top of message bubbles */
+.chat-card {
+  overflow: visible;
+}
