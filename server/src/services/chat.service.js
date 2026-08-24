@@ -20,3 +20,16 @@ export async function createMessage({ userId, familyId, message, isVoice }) {
     include: { user: { select: { name: true } } },
   });
 }
+
+export async function deleteMessage({ id, userId, familyId }) {
+  const message = await prisma.chatMessage.findUnique({ where: { id } });
+  if (!message) throw new Error("Message not found");
+  if (message.userId !== userId) throw new Error("Not authorized");
+  await prisma.chatMessage.delete({ where: { id } });
+  return true;
+}
+
+export async function deleteAllMessages(familyId) {
+  await prisma.chatMessage.deleteMany({ where: { familyId } });
+  return true;
+}

@@ -98,6 +98,27 @@ export default function Chat() {
     setShowEmoji(false);
   }
 
+    // Delete a single message (only your own)
+  async function deleteOne(id) {
+    if (!family || !id) return;
+    try {
+      await api.delete(`/chat/${family.id}/messages/${id}`);
+      await loadMessages();
+    } catch (_) {
+      alert("You can only delete your own messages.");
+    }
+  }
+
+  // Delete all messages in the family chat
+  async function deleteAll() {
+    if (!family) return;
+    if (!window.confirm("Delete ALL messages in this chat?")) return;
+    try {
+      await api.delete(`/chat/${family.id}/messages`);
+      await loadMessages();
+    } catch (_) {}
+  }
+
   // Handle photo/file upload
   function handleFile(e) {
     const file = e.target.files?.[0];
@@ -167,7 +188,12 @@ export default function Chat() {
   if (view === "individual") {
     return (
       <div className="page">
-        <div className="page-head"><h2>Family Chat</h2></div>
+      <div className="page-head">
+        <h2>Family Chat</h2>
+        <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
+          🗑️ Clear chat
+        </button>
+      </div>
         <div className="card">
           <p className="empty">🔒 Chat is only available in <strong>Family</strong> view.</p>
         </div>
@@ -238,15 +264,27 @@ export default function Chat() {
                     ) : (
                       <div>{m.message}</div>
                     )}
-                    <div className="cb-time">
+                      <div className="cb-time">
                       {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                     </div>
+                    {/* Delete this message (own messages only) */}
+                    {isMe && (
+                      <button
+                        type="button"
+                        className="chat-delete-btn"
+                        onClick={() => deleteOne(m.id)}
+                        aria-label="Delete message"
+                        title="Delete message"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 </div>
               );
             })}
             {sortedMessages.length === 0 && (
-              <p className="empty">No messages yet. Say hi to your family! 👋</p>
+              <p className="empty"></p>
             )}
             <div ref={bottomRef} />
           </div>
