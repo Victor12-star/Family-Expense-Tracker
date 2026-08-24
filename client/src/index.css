@@ -1468,3 +1468,12 @@ html.a11y-motion *::after {
 .chat-card {
   overflow: visible;
 }
+
+/* "Sending photo…" feedback next to the input bar */
+.uploading-indicator {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+  align-self: center;
+  white-space: nowrap;
+}

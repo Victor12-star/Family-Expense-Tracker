@@ -23,6 +23,7 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showAttach, setShowAttach] = useState(false); // camera / gallery menu
+  const [uploadingPhoto, setUploadingPhoto] = useState(false); // photo is being sent
   const [recording, setRecording] = useState(false);
 
   // Two hidden file inputs: one forces the phone camera, one opens the gallery.
@@ -126,30 +127,40 @@ export default function Chat() {
   // Downscale + compress an image so it uploads quickly and stays small.
   // Phone photos can be several MB; we shrink them to a max dimension and
   // JPEG quality that keeps them reliable in the chat.
+  // If the image can't be decoded/compressed (e.g. some iPhone HEIC photos in
+  // non-Safari browsers), we resolve `null` so the caller sends the original file.
   function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const MAX = 1280; // longest side in px
-        let { width, height } = img;
-        if (width > height && width > MAX) {
-          height = Math.round((height * MAX) / width);
-          width = MAX;
-        } else if (height > MAX) {
-          width = Math.round((width * MAX) / height);
-          height = MAX;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        // JPEG at 0.75 quality is a good balance of size and clarity
-        resolve(canvas.toDataURL("image/jpeg", 0.75));
-      };
-      img.onerror = reject;
-      img.src = url;
+    return new Promise((resolve) => {
+      try {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          try {
+            const MAX = 1280; // longest side in px
+            let { width, height } = img;
+            if (width > height && width > MAX) {
+              height = Math.round((height * MAX) / width);
+              width = MAX;
+            } else if (height > MAX) {
+              width = Math.round((width * MAX) / height);
+              height = MAX;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            // JPEG at 0.75 quality is a good balance of size and clarity
+            resolve(canvas.toDataURL("image/jpeg", 0.75) || null);
+          } catch (_) {
+            resolve(null); // canvas failed -> send original
+          }
+        };
+        img.onerror = () => resolve(null); // can't decode -> send original
+        img.src = url;
+      } catch (_) {
+        resolve(null);
+      }
     });
   }
 
@@ -158,14 +169,26 @@ export default function Chat() {
     const file = e.target.files?.[0];
     if (!file || !family) return;
     setShowAttach(false);
+    setUploadingPhoto(true);
     try {
-      const dataUrl = await compressImage(file);
+      // Read the raw file first so we always have something to send, even if
+      // compression fails (e.g. an unsupported format on some browsers).
+      const raw = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      // Try to compress; if it returns null, fall back to the original file.
+      const compressed = await compressImage(file);
+      const dataUrl = compressed || raw;
       await api.post(`/chat/${family.id}`, { message: dataUrl });
       await loadMessages();
     } catch (err) {
       console.error("Photo upload failed:", err);
-      alert("Photo failed to send.");
+      alert("Photo failed to send. Please try a smaller or different image.");
     } finally {
+      setUploadingPhoto(false);
       e.target.value = ""; // allow re-selecting the same file next time
     }
   }
@@ -406,6 +429,7 @@ export default function Chat() {
               {recording ? "⏹️" : "🎙️"}
             </button>
             {recording && <span className="recording-indicator">● Recording… release to send</span>}
+            {uploadingPhoto && <span className="uploading-indicator">Sending photo…</span>}
 
             <label className="sr-only" htmlFor="chat-text">Message</label>
             <input id="chat-text" placeholder="Type a message…" value={text} onChange={(e) => setText(e.target.value)} disabled={sending} />

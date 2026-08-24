@@ -17,7 +17,9 @@ app.set("trust proxy", 1);
 app.use(securityHeaders());
 app.use(corsPolicy());
 app.use(globalLimiter);
-app.use(express.json({ limit: "100kb" }));
+// Allow larger request bodies so photos (base64 images) and voice recordings can
+// be uploaded through chat. The default (100kb) is too small for a photo.
+app.use(express.json({ limit: "10mb" }));
 
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
