@@ -30,18 +30,18 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={styles.wrap}>
-          <div style={styles.card}>
-            <div style={styles.icon}>⚠️</div>
-            <h1 style={styles.h1}>Something went wrong</h1>
-            <p style={styles.p}>
-              The app hit an unexpected error. Your account and family are safe — just reload to continue.
-            </p>
-            <button type="button" onClick={this.handleReload} style={styles.btn}>
-              🔄 Reload
-            </button>
-          </div>
-        </div>
+    <div style={styles.wrap}>
+      <div style={styles.card}>
+        <div style={styles.icon}>⚠️</div>
+        <h1 style={styles.h1}>Something went wrong</h1>
+        <p style={styles.p}>
+          The app hit an unexpected error. Your account and family are safe — just reload to continue.
+        </p>
+        <button type="button" onClick={this.handleReload} style={styles.btn}>
+          🔄 Reload
+        </button>
+      </div>
+    </div>
       );
     }
     return this.props.children;
@@ -55,15 +55,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "#0f1a3a",
-    color: "#eef3ff",
+    background: "#0f172a",
+    color: "#f1f5f9",
     fontFamily: "Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
     padding: 20,
   },
   card: {
-    background: "#172554",
-    border: "1px solid rgba(148,197,255,.2)",
-    borderRadius: 20,
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: 18,
     padding: "32px 28px",
     textAlign: "center",
     maxWidth: 420,
@@ -71,7 +71,7 @@ const styles = {
   },
   icon: { fontSize: 44, marginBottom: 8 },
   h1: { fontSize: 22, margin: "0 0 8px" },
-  p: { fontSize: 14, color: "#9fb0d0", margin: "0 0 20px", lineHeight: 1.5 },
+  p: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 },
   btn: {
     fontFamily: "inherit",
     fontSize: 15,
@@ -80,7 +80,7 @@ const styles = {
     border: "none",
     borderRadius: 10,
     cursor: "pointer",
-    background: "linear-gradient(135deg,#38bdf8,#818cf8)",
+    background: "#6366f1",
     color: "#fff",
   },
 };

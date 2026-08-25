@@ -2,15 +2,15 @@
 // App-wide constants
 // =====================================================================
 
-// Expense categories + their colors
+// Expense categories + their colors (aligned with the design system)
 export const CATEGORIES = {
-  Food: "#f59e0b",
-  Transport: "#38bdf8",
-  Shopping: "#a78bfa",
-  Bills: "#fbbf24",
-  Entertainment: "#f472b6",
-  Health: "#34d399",
-  Other: "#94a3b8",
+  Food: "#f59e0b",            // amber
+  Transport: "#6366f1",       // indigo
+  Shopping: "#0d9488",        // teal
+  Bills: "#dc2626",           // red (fixed bills)
+  Entertainment: "#d946ef",   // fuchsia
+  Health: "#16a34a",          // green
+  Other: "#94a3b8",           // slate
 };
 
 // Full list of world currencies (code -> symbol)

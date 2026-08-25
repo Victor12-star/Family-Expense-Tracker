@@ -37,4 +37,17 @@ export function setAccessibilitySetting(name, value) {
 // Apply once on app load
 export function initAccessibility() {
   applyAccessibility(getAccessibilitySettings());
+  initTheme();
+}
+
+// Theme (light/dark) persistence — reads the saved choice and applies the
+// `.light` class on the <html> element so the correct theme survives reloads.
+export function initTheme() {
+  const el = document.documentElement;
+  const theme = localStorage.getItem("fet_theme");
+  if (theme === "light") {
+    el.classList.add("light");
+  } else {
+    el.classList.remove("light");
+  }
 }

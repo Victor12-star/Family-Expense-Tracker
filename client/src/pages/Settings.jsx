@@ -10,7 +10,8 @@ import {
 export default function Settings() {
   const { user } = useAuth();
   const { currency, changeCurrency } = useCurrency();
-  const [theme, setTheme] = useState("dark");
+  // Load the saved theme (default "dark") so the dropdown matches the app.
+  const [theme, setTheme] = useState(localStorage.getItem("fet_theme") || "dark");
   const [a11y, setA11y] = useState(getAccessibilitySettings());
 
   function handleThemeChange(e) {

@@ -36,7 +36,8 @@ export default function Chat() {
   const recordStartRef = useRef(null); // timestamp when recording started
   const bottomRef = useRef(null);
 
-  const USER_COLORS = ["#38bdf8", "#818cf8", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
+  // Avatar colours — on-brand, distinct, and readable on both themes.
+  const USER_COLORS = ["#6366f1", "#0d9488", "#16a34a", "#d97706", "#dc2626", "#7c3aed"];
 
   function colorFor(name) {
     if (!name) return USER_COLORS[0];

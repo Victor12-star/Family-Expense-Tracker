@@ -1,7 +1,7 @@
 // =====================================================================
 // Navbar — top navigation (desktop) with brand, view toggle, avatar
 // =====================================================================
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
@@ -27,12 +27,12 @@ export default function Navbar() {
 
       <div className="nav-actions">
         <nav className="nav-links" aria-label="Primary">
-          <Link to="/expenses">Expenses</Link>
-          <Link to="/calendar">Calendar</Link>
-          <Link to="/shopping">Shopping</Link>
-          <Link to="/chat">Chat</Link>
-          <Link to="/family">Family</Link>
-          <Link to="/settings">Settings</Link>
+          <NavLink to="/expenses" className={({ isActive }) => (isActive ? "active" : "")}>Expenses</NavLink>
+          <NavLink to="/calendar" className={({ isActive }) => (isActive ? "active" : "")}>Calendar</NavLink>
+          <NavLink to="/shopping" className={({ isActive }) => (isActive ? "active" : "")}>Shopping</NavLink>
+          <NavLink to="/chat" className={({ isActive }) => (isActive ? "active" : "")}>Chat</NavLink>
+          <NavLink to="/family" className={({ isActive }) => (isActive ? "active" : "")}>Family</NavLink>
+          <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>Settings</NavLink>
         </nav>
         <span className="avatar" aria-label={user?.name ? `Logged in as ${user.name}` : "Guest"}>
           {user?.name?.[0]?.toUpperCase()}
