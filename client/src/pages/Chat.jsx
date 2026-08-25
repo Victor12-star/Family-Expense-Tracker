@@ -63,12 +63,26 @@ export default function Chat() {
     } catch (_) {}
   }
 
-  // Load on family change + poll every 3s so new messages always show
+  // Poll for new messages, but ONLY while the tab is visible and in focus.
+  // Re-fetching (and re-decoding) every photo every few seconds crashes phones,
+  // so we pause when the user isn't looking at the chat.
   useEffect(() => {
     if (!family) return;
-    loadMessages();
-    const interval = setInterval(loadMessages, 3000);
-    return () => clearInterval(interval);
+
+    const refresh = () => {
+      if (document.visibilityState === "visible" && !document.hidden) {
+        loadMessages();
+      }
+    };
+
+    // Load immediately, then poll every 4s only when the tab is visible.
+    refresh();
+    const interval = setInterval(refresh, 4000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [family]);
 
   // Scroll to bottom on new messages
@@ -124,51 +138,65 @@ export default function Chat() {
     } catch (_) {}
   }
 
-  // Read a file into a data-URL (base64). This is memory-light: it just builds a
-  // string, it does NOT decode the image into memory, so it's safe on phones.
-  function fileToDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Downscale + compress an image so it uploads quickly and stays small.
-  // Uses createImageBitmap (memory-efficient) instead of <img>, and the bitmap
-  // is closed after use. If compression is unsupported or fails, we resolve
-  // `null` so the caller sends the original file instead of failing.
+  // Downscale + compress an image to a small JPEG so it uploads quickly and
+  // won't crash the phone's browser when re-rendered. We use createImageBitmap
+  // (memory-efficient) when available; otherwise we fall back to <img> + canvas.
+  // We NEVER send a full-resolution photo — that's what overwhelms mobile devices.
   function compressImage(file) {
-    return new Promise((resolve) => {
-      // Only compress large files; skip if the efficient API isn't available.
-      if (typeof createImageBitmap !== "function" || file.size < 150_000) {
-        resolve(null);
-        return;
-      }
-      createImageBitmap(file, { imageOrientation: "from-image" })
-        .then((bitmap) => {
-          try {
-            const MAX = 1280; // longest side in px
-            let { width, height } = bitmap;
-            if (width > height && width > MAX) {
-              height = Math.round((height * MAX) / width);
-              width = MAX;
-            } else if (height > MAX) {
-              width = Math.round((width * MAX) / height);
-              height = MAX;
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
-            bitmap.close(); // free the decoded bitmap memory
-            resolve(canvas.toDataURL("image/jpeg", 0.72) || null);
-          } catch (_) {
-            resolve(null); // canvas failed -> send original
+    return new Promise((resolve, reject) => {
+      const MAX = 1280; // longest side in px
+
+      // Common helper: draw a bitmap/image onto a canvas and emit a small JPEG.
+      const toJpeg = (source) => {
+        try {
+          let { width, height } = source;
+          if (width > height && width > MAX) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          } else if (height > MAX) {
+            width = Math.round((width * MAX) / height);
+            height = MAX;
           }
-        })
-        .catch(() => resolve(null)); // can't decode -> send original
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(source, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          if (source.close) source.close(); // free decoded bitmap memory
+          return dataUrl;
+        } catch (err) {
+          if (source.close) source.close();
+          throw err;
+        }
+      };
+
+      // Preferred path: createImageBitmap (fast, low memory, keeps orientation).
+      if (typeof createImageBitmap === "function") {
+        createImageBitmap(file, { imageOrientation: "from-image" })
+          .then((bitmap) => resolve(toJpeg(bitmap)))
+          .catch(() => fallbackToImg());
+      } else {
+        fallbackToImg();
+      }
+
+      // Fallback path: classic <img> + canvas (works everywhere).
+      function fallbackToImg() {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          try {
+            URL.revokeObjectURL(url);
+            resolve(toJpeg(img));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("Cannot decode image"));
+        };
+        img.src = url;
+      }
     });
   }
 
@@ -179,17 +207,13 @@ export default function Chat() {
     setShowAttach(false);
     setUploadingPhoto(true);
     try {
-      // Read the raw file first so we always have something to send, even if
-      // compression fails or is unsupported on this device.
-      const raw = await fileToDataUrl(file);
-      // Try to compress; if it returns null, fall back to the original file.
-      const compressed = await compressImage(file);
-      const dataUrl = compressed || raw;
+      // Always compress — this keeps the photo small and prevents browser crashes.
+      const dataUrl = await compressImage(file);
       await api.post(`/chat/${family.id}`, { message: dataUrl });
       await loadMessages();
     } catch (err) {
       console.error("Photo upload failed:", err);
-      alert("Photo failed to send. Please try a smaller or different image.");
+      alert("Sorry, that photo couldn't be sent. Please try a different picture.");
     } finally {
       setUploadingPhoto(false);
       e.target.value = ""; // allow re-selecting the same file next time
@@ -337,7 +361,7 @@ export default function Chat() {
                         {m.duration > 0 && <span className="voice-duration">{m.duration}s</span>}
                       </div>
                     ) : isImage ? (
-                      <img src={m.message} alt="Shared in chat" className="chat-image" />
+                      <img src={m.message} alt="Shared in chat" className="chat-image" loading="lazy" />
                     ) : (
                       <div>{m.message}</div>
                     )}
