@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { FamilyProvider } from "./context/FamilyContext.jsx";
 import { CurrencyProvider } from "./context/CurrencyContext.jsx";
 import SkipLink from "./components/SkipLink.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { initAccessibility } from "./utils/accessibility.js";
 import "./index.css";
 
@@ -17,15 +18,17 @@ initAccessibility();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <SkipLink />
-      <AuthProvider>
-        <FamilyProvider>
-          <CurrencyProvider>
-            <App />
-          </CurrencyProvider>
-        </FamilyProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <SkipLink />
+        <AuthProvider>
+          <FamilyProvider>
+            <CurrencyProvider>
+              <App />
+            </CurrencyProvider>
+          </FamilyProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );

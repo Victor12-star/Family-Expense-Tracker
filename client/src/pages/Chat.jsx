@@ -124,21 +124,33 @@ export default function Chat() {
     } catch (_) {}
   }
 
+  // Read a file into a data-URL (base64). This is memory-light: it just builds a
+  // string, it does NOT decode the image into memory, so it's safe on phones.
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Downscale + compress an image so it uploads quickly and stays small.
-  // Phone photos can be several MB; we shrink them to a max dimension and
-  // JPEG quality that keeps them reliable in the chat.
-  // If the image can't be decoded/compressed (e.g. some iPhone HEIC photos in
-  // non-Safari browsers), we resolve `null` so the caller sends the original file.
+  // Uses createImageBitmap (memory-efficient) instead of <img>, and the bitmap
+  // is closed after use. If compression is unsupported or fails, we resolve
+  // `null` so the caller sends the original file instead of failing.
   function compressImage(file) {
     return new Promise((resolve) => {
-      try {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
-          URL.revokeObjectURL(url);
+      // Only compress large files; skip if the efficient API isn't available.
+      if (typeof createImageBitmap !== "function" || file.size < 150_000) {
+        resolve(null);
+        return;
+      }
+      createImageBitmap(file, { imageOrientation: "from-image" })
+        .then((bitmap) => {
           try {
             const MAX = 1280; // longest side in px
-            let { width, height } = img;
+            let { width, height } = bitmap;
             if (width > height && width > MAX) {
               height = Math.round((height * MAX) / width);
               width = MAX;
@@ -149,18 +161,14 @@ export default function Chat() {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
-            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-            // JPEG at 0.75 quality is a good balance of size and clarity
-            resolve(canvas.toDataURL("image/jpeg", 0.75) || null);
+            canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+            bitmap.close(); // free the decoded bitmap memory
+            resolve(canvas.toDataURL("image/jpeg", 0.72) || null);
           } catch (_) {
             resolve(null); // canvas failed -> send original
           }
-        };
-        img.onerror = () => resolve(null); // can't decode -> send original
-        img.src = url;
-      } catch (_) {
-        resolve(null);
-      }
+        })
+        .catch(() => resolve(null)); // can't decode -> send original
     });
   }
 
@@ -172,13 +180,8 @@ export default function Chat() {
     setUploadingPhoto(true);
     try {
       // Read the raw file first so we always have something to send, even if
-      // compression fails (e.g. an unsupported format on some browsers).
-      const raw = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // compression fails or is unsupported on this device.
+      const raw = await fileToDataUrl(file);
       // Try to compress; if it returns null, fall back to the original file.
       const compressed = await compressImage(file);
       const dataUrl = compressed || raw;
