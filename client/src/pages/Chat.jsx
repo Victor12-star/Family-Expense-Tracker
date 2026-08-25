@@ -25,6 +25,7 @@ export default function Chat() {
   const [showAttach, setShowAttach] = useState(false); // camera / gallery menu
   const [uploadingPhoto, setUploadingPhoto] = useState(false); // photo is being sent
   const [recording, setRecording] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // full-screen image viewer (holds src) or null
 
   // Two hidden file inputs: one forces the phone camera, one opens the gallery.
   const cameraInputRef = useRef(null);
@@ -89,6 +90,16 @@ export default function Chat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Close the full-screen photo viewer with the Escape key
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setLightbox(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
   // Send text
   async function send(e) {
@@ -353,7 +364,16 @@ export default function Chat() {
                         {m.duration > 0 && <span className="voice-duration">{m.duration}s</span>}
                       </div>
                     ) : isImage ? (
-                      <img src={m.message} alt="Shared in chat" className="chat-image" loading="lazy" />
+                      // Clicking a photo opens it full-screen (lightbox) so only
+                      // the image is zoomed — never the whole chat.
+                      <button
+                        type="button"
+                        className="chat-image-btn"
+                        onClick={() => setLightbox(m.message)}
+                        aria-label="View photo full screen"
+                      >
+                        <img src={m.message} alt="Shared in chat" className="chat-image" loading="lazy" />
+                      </button>
                     ) : (
                       <div>{m.message}</div>
                     )}
@@ -456,6 +476,22 @@ export default function Chat() {
           </form>
         </div>
       </div>
+
+      {/* Full-screen photo viewer (lightbox). Tapping the image opens it here so
+          only the photo is zoomed, not the whole chat. Tap anywhere to close. */}
+      {lightbox && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="Photo enlarged" className="lightbox-img" />
+          <button
+            type="button"
+            className="lightbox-close"
+            onClick={() => setLightbox(null)}
+            aria-label="Close photo"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

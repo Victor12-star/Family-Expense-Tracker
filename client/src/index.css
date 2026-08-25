@@ -1208,6 +1208,75 @@ html.a11y-motion *::after {
   display: block;
 }
 
+/* Make the photo a tappable button (to open the full-screen viewer). */
+.chat-image-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 8px;
+  line-height: 0;
+}
+
+.chat-image-btn:hover .chat-image {
+  opacity: 0.92;
+}
+
+/* ============ FULL-SCREEN PHOTO VIEWER (LIGHTBOX) ============ */
+/* A dark overlay that covers the whole screen so the photo can be viewed and
+   zoomed without affecting the chat behind it. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The enlarged image: fills most of the screen, keeps aspect ratio, and the
+   whole page behind it stays fixed (no chat zoom). */
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 @media (max-width: 520px) {
   .emoji-picker {
     grid-template-columns: repeat(5, 1fr);
