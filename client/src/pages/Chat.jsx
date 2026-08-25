@@ -139,63 +139,55 @@ export default function Chat() {
   }
 
   // Downscale + compress an image to a small JPEG so it uploads quickly and
-  // won't crash the phone's browser when re-rendered. We use createImageBitmap
-  // (memory-efficient) when available; otherwise we fall back to <img> + canvas.
-  // We NEVER send a full-resolution photo — that's what overwhelms mobile devices.
+  // won't crash the phone when re-rendered. We use the classic <img> decode +
+  // canvas, which is the most reliable across browsers (handles both JPEG photos
+  // from Android and HEIC photos from iPhones, and respects EXIF orientation).
+  // Camera photos are large, so we downscale to a modest size for fast upload.
   function compressImage(file) {
     return new Promise((resolve, reject) => {
-      const MAX = 1280; // longest side in px
-
-      // Common helper: draw a bitmap/image onto a canvas and emit a small JPEG.
-      const toJpeg = (source) => {
-        try {
-          let { width, height } = source;
-          if (width > height && width > MAX) {
-            height = Math.round((height * MAX) / width);
-            width = MAX;
-          } else if (height > MAX) {
-            width = Math.round((width * MAX) / height);
-            height = MAX;
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext("2d").drawImage(source, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-          if (source.close) source.close(); // free decoded bitmap memory
-          return dataUrl;
-        } catch (err) {
-          if (source.close) source.close();
-          throw err;
-        }
-      };
-
-      // Preferred path: createImageBitmap (fast, low memory, keeps orientation).
-      if (typeof createImageBitmap === "function") {
-        createImageBitmap(file, { imageOrientation: "from-image" })
-          .then((bitmap) => resolve(toJpeg(bitmap)))
-          .catch(() => fallbackToImg());
-      } else {
-        fallbackToImg();
-      }
-
-      // Fallback path: classic <img> + canvas (works everywhere).
-      function fallbackToImg() {
+      try {
         const url = URL.createObjectURL(file);
         const img = new Image();
+
         img.onload = () => {
           try {
             URL.revokeObjectURL(url);
-            resolve(toJpeg(img));
+            const MAX = 1024; // longest side in px (smaller = faster on camera pics)
+            let { width, height } = img;
+            if (width > height && width > MAX) {
+              height = Math.round((height * MAX) / width);
+              width = MAX;
+            } else if (height > MAX) {
+              width = Math.round((width * MAX) / height);
+              height = MAX;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+
+            // A real photo is tens of KB as base64. If the result is suspiciously
+            // tiny, the image likely failed to draw to canvas (blank). Reject so
+            // we never post a blank image. (Threshold is low enough that normal
+            // small gallery images still pass.)
+            if (!dataUrl || dataUrl.length < 8000) {
+              reject(new Error("Image could not be read"));
+              return;
+            }
+            resolve(dataUrl);
           } catch (err) {
             reject(err);
           }
         };
+
         img.onerror = () => {
           URL.revokeObjectURL(url);
           reject(new Error("Cannot decode image"));
         };
         img.src = url;
+      } catch (err) {
+        reject(err);
       }
     });
   }
