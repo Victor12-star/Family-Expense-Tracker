@@ -139,10 +139,16 @@ model ChatMessage {
   message   String
   isVoice   Boolean  @default(false)
   duration  Int      @default(0) // seconds, only for voice messages
+  // For 1-on-1 direct messages: holds the OTHER participant's user id.
+  // NULL means it's a normal family-group message.
+  directWithId String?
   createdAt DateTime @default(now())
 
   family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([familyId])
+  @@index([directWithId])
 }
 
 // ----------------------------------------------------------------

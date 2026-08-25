@@ -3,11 +3,22 @@ import { body } from "express-validator";
 import { requireAuth } from "../middleware/auth.js";
 import { requireFamilyMember } from "../middleware/authorize.js";
 import { validate } from "../middleware/validate.js";
-import { getMessages, sendMessage, removeMessage, clearMessages } from "../controllers/chat.controller.js";
+import {
+  getMessages,
+  sendMessage,
+  removeMessage,
+  clearMessages,
+  getDirectMessages,
+  sendDirectMessage,
+} from "../controllers/chat.controller.js";
 
 const router = Router();
 router.use(requireAuth);
 router.use("/:familyId", requireFamilyMember);
+
+// 1-on-1 direct chat with a specific family member
+router.get("/:familyId/direct/:userId", getDirectMessages);
+router.post("/:familyId/direct/:userId", sendDirectMessage);
 
 router.get("/:familyId", getMessages);
 // Text messages are capped at 2000 chars. Voice messages (base64 audio) and photo

@@ -1071,6 +1071,34 @@ body {
   border-bottom: none;
 }
 
+/* Members are clickable buttons for starting a 1-on-1 chat */
+.member-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 8px 6px;
+  transition: background-color 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.member-btn:hover:not(:disabled) {
+  background: var(--panel-strong);
+}
+
+.member-btn:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* The member you're currently chatting with */
+.member-btn.member-active {
+  background: var(--primary-soft);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
 .member-avatar {
   width: 30px;
   height: 30px;

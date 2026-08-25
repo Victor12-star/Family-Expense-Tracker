@@ -26,6 +26,8 @@ export default function Chat() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false); // photo is being sent
   const [recording, setRecording] = useState(false);
   const [lightbox, setLightbox] = useState(null); // full-screen image viewer (holds src) or null
+  // directWith = the member you're in a private 1-on-1 chat with (null = family group chat)
+  const [directWith, setDirectWith] = useState(null);
 
   // Two hidden file inputs: one forces the phone camera, one opens the gallery.
   const cameraInputRef = useRef(null);
@@ -56,11 +58,15 @@ export default function Chat() {
     return typeof msg.message === "string" && msg.message.startsWith("💸");
   }
 
-  // Load messages
+  // Load messages — loads the family group chat, or the 1-on-1 thread if
+  // a member is selected (directWith).
   async function loadMessages() {
     if (!family) return;
     try {
-      const r = await api.get(`/chat/${family.id}`);
+      const base = directWith
+        ? `/chat/${family.id}/direct/${directWith.id}`
+        : `/chat/${family.id}`;
+      const r = await api.get(base);
       setMessages(r.data);
     } catch (_) {}
   }
@@ -85,7 +91,7 @@ export default function Chat() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [family]);
+  }, [family, directWith]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -113,7 +119,10 @@ export default function Chat() {
     setSending(true);
     setText("");
     try {
-      await api.post(`/chat/${family.id}`, { message: msg });
+      const url = directWith
+        ? `/chat/${family.id}/direct/${directWith.id}`
+        : `/chat/${family.id}`;
+      await api.post(url, { message: msg });
       await loadMessages();
     } catch (err) {
       console.error("Send failed:", err);
@@ -213,7 +222,10 @@ export default function Chat() {
     try {
       // Always compress — this keeps the photo small and prevents browser crashes.
       const dataUrl = await compressImage(file);
-      await api.post(`/chat/${family.id}`, { message: dataUrl });
+      const url = directWith
+        ? `/chat/${family.id}/direct/${directWith.id}`
+        : `/chat/${family.id}`;
+      await api.post(url, { message: dataUrl });
       await loadMessages();
     } catch (err) {
       console.error("Photo upload failed:", err);
@@ -253,7 +265,10 @@ export default function Chat() {
           const reader = new FileReader();
           reader.onload = async () => {
             try {
-              await api.post(`/chat/${family.id}`, {
+              const url = directWith
+                ? `/chat/${family.id}/direct/${directWith.id}`
+                : `/chat/${family.id}`;
+              await api.post(url, {
                 message: reader.result,
                 isVoice: true,
                 duration: durationSec,
@@ -309,7 +324,19 @@ export default function Chat() {
 
   return (
     <div className="page">
-      <div className="page-head"><h2>Family Chat</h2></div>
+      <div className="page-head">
+        <h2>{directWith ? `Chat with ${directWith.user?.name || "member"}` : "Family Chat"}</h2>
+        {directWith && (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => { setDirectWith(null); setShowAttach(false); }}
+            title="Back to family chat"
+          >
+            ← Family chat
+          </button>
+        )}
+      </div>
 
       <div className="messaging-layout">
         <aside className="chat-sidebar" aria-label="Conversation details">
@@ -323,19 +350,34 @@ export default function Chat() {
             </div>
           </div>
           <div className="sidebar-members">
-            <h4>Members</h4>
-            {family?.members?.map((m) => (
-              <div className="sidebar-member" key={m.id}>
-                <span className="member-avatar" style={{ background: colorFor(m.user?.name) }}>
-                  {m.user?.name?.[0]?.toUpperCase()}
-                </span>
-                <span className="member-name">{m.user?.name}</span>
-                <span className="member-role">{m.role}</span>
-              </div>
-            ))}
+            <h4>Members — tap to message</h4>
+            {family?.members?.map((m) => {
+              const isMe = m.user?.id === user?.id;
+              return (
+                <button
+                  type="button"
+                  className={`sidebar-member member-btn ${directWith?.id === m.user?.id ? "member-active" : ""}`}
+                  key={m.id}
+                  onClick={() => {
+                    if (!isMe) {
+                      setDirectWith(m.user); // open a private 1-on-1 chat
+                      setShowAttach(false);
+                    }
+                  }}
+                  disabled={isMe}
+                  aria-label={isMe ? `${m.user?.name} (you)` : `Message ${m.user?.name} privately`}
+                >
+                  <span className="member-avatar" style={{ background: colorFor(m.user?.name) }}>
+                    {m.user?.name?.[0]?.toUpperCase()}
+                  </span>
+                  <span className="member-name">{m.user?.name}{isMe ? " (you)" : ""}</span>
+                  <span className="member-role">{m.role}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="sidebar-note">
-            <p>💡 Tip: Add expenses and they'll appear here automatically.</p>
+            <p>💡 Tap a family member to start a private 1-on-1 chat.</p>
           </div>
         </aside>
 
