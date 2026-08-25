@@ -1609,3 +1609,82 @@ html.a11y-motion *::after {
   animation: none !important;
   transition: none !important;
 }
+
+/* ============ WHITE CHAT THEME ============ */
+/* Force the chat window & bubbles to a clean white background with dark text,
+   in BOTH light and dark modes (this block is last, so it wins). */
+.chat-window {
+  background: #f8fafc;
+}
+
+.chat-bubble {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1f2937;
+}
+
+.chat-msg.me .chat-bubble {
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+}
+
+.chat-msg.system .chat-bubble {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.cb-name {
+  color: #0369a1;
+}
+
+.chat-msg.system .cb-name {
+  color: #059669;
+}
+
+.cb-time {
+  color: #64748b;
+}
+
+/* White input bar with a clean white field */
+.chat-input {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.chat-input input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1f2937;
+}
+
+.chat-input input::placeholder {
+  color: #94a3b8;
+}
+
+.chat-tool-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.chat-tool-btn:hover {
+  background: #f1f5f9;
+}
+
+.chat-tool-btn.recording {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.attach-menu {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.attach-item {
+  color: #1f2937;
+}
+
+.attach-item:hover {
+  background: #f1f5f9;
+}
