@@ -5,6 +5,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Prisma migrations use a non-transaction-pooled connection while the
+  // application uses Supabase's transaction pooler at runtime.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
