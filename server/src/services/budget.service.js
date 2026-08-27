@@ -1,5 +1,6 @@
 import { prisma } from "../config/prisma.js";
 import { createError } from "../utils/apiError.js";
+import { budgetScopeKey, normalizeCurrency } from "../utils/finance.js";
 import { resolveScope } from "./scope.service.js";
 
 function validMonth(month) {
@@ -9,11 +10,9 @@ function validMonth(month) {
 export async function getBudget({ userId, familyId, view, month }) {
   if (!validMonth(month)) throw createError(400, "month must be YYYY-MM", "INVALID_MONTH");
   const scope = await resolveScope({ userId, familyId, view });
-  return prisma.budget.findFirst({
-    where: scope.view === "single"
-      ? { userId, familyId: null, month }
-      : { familyId: scope.familyId, month },
-    orderBy: { updatedAt: "desc" },
+  const scopeKey = budgetScopeKey({ ...scope, userId });
+  return prisma.budget.findUnique({
+    where: { scopeKey_month: { scopeKey, month } },
   });
 }
 
@@ -25,25 +24,20 @@ export async function setBudget({ userId, familyId, view, month, amount, currenc
   }
 
   const scope = await resolveScope({ userId, familyId, view });
-  const where = scope.view === "single"
-    ? { userId, familyId: null, month }
-    : { familyId: scope.familyId, month };
+  const scopeKey = budgetScopeKey({ ...scope, userId });
+  const resolvedCurrency = normalizeCurrency(currency);
 
-  const existing = await prisma.budget.findFirst({ where, orderBy: { updatedAt: "desc" } });
-  if (existing) {
-    return prisma.budget.update({
-      where: { id: existing.id },
-      data: { amount: numericAmount, currency: currency || existing.currency },
-    });
-  }
-
-  return prisma.budget.create({
-    data: {
+  // The unique scope/month key makes this atomic under concurrent requests.
+  return prisma.budget.upsert({
+    where: { scopeKey_month: { scopeKey, month } },
+    update: { amount: numericAmount, currency: resolvedCurrency },
+    create: {
+      scopeKey,
       userId,
       familyId: scope.familyId,
       month,
       amount: numericAmount,
-      currency: currency || "SEK",
+      currency: resolvedCurrency,
     },
   });
 }

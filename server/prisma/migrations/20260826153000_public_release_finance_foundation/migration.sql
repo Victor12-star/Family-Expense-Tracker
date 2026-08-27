@@ -28,6 +28,7 @@ ALTER TABLE "Activity" ALTER COLUMN "familyId" DROP NOT NULL;
 
 CREATE TABLE "Budget" (
   "id" TEXT NOT NULL,
+  "scopeKey" TEXT NOT NULL,
   "familyId" TEXT,
   "userId" TEXT NOT NULL,
   "month" TEXT NOT NULL,
@@ -61,6 +62,7 @@ CREATE INDEX "ShoppingItem_userId_done_idx" ON "ShoppingItem"("userId", "done");
 CREATE INDEX "ShoppingItem_tripId_idx" ON "ShoppingItem"("tripId");
 CREATE INDEX "Budget_familyId_month_idx" ON "Budget"("familyId", "month");
 CREATE INDEX "Budget_userId_month_idx" ON "Budget"("userId", "month");
+CREATE UNIQUE INDEX "Budget_scopeKey_month_key" ON "Budget"("scopeKey", "month");
 CREATE INDEX "ShoppingTrip_familyId_completedAt_idx" ON "ShoppingTrip"("familyId", "completedAt");
 CREATE INDEX "ShoppingTrip_userId_completedAt_idx" ON "ShoppingTrip"("userId", "completedAt");
 

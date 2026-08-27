@@ -14,3 +14,7 @@ export function normalizeCurrency(value, fallback = "SEK") {
   const currency = String(value || fallback).trim().toUpperCase();
   return /^[A-Z]{3}$/.test(currency) ? currency : fallback;
 }
+
+export function budgetScopeKey({ view, userId, familyId }) {
+  return view === "single" ? `user:${userId}` : `family:${familyId}`;
+}

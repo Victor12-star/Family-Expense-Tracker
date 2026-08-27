@@ -88,6 +88,7 @@ model Expense {
 
 model Budget {
   id        String   @id @default(cuid())
+  scopeKey  String
   familyId  String?
   userId    String
   month     String   // YYYY-MM
@@ -101,6 +102,7 @@ model Budget {
 
   @@index([familyId, month])
   @@index([userId, month])
+  @@unique([scopeKey, month])
 }
 
 model Reminder {

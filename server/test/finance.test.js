@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeCurrency, shoppingLineEstimate } from "../src/utils/finance.js";
+import { budgetScopeKey, normalizeCurrency, shoppingLineEstimate } from "../src/utils/finance.js";
 
 test("shoppingLineEstimate multiplies decimal quantity and price", () => {
   assert.equal(shoppingLineEstimate({ quantity: "2.5", estimatedUnitPrice: "12.40" }), 31);
@@ -14,4 +14,9 @@ test("shoppingLineEstimate rejects unsafe stored values", () => {
 test("normalizeCurrency accepts ISO-like codes and safely falls back", () => {
   assert.equal(normalizeCurrency("sek"), "SEK");
   assert.equal(normalizeCurrency("not-a-code"), "SEK");
+});
+
+test("budgetScopeKey separates Single and Family monthly budgets", () => {
+  assert.equal(budgetScopeKey({ view: "single", userId: "user-1" }), "user:user-1");
+  assert.equal(budgetScopeKey({ view: "family", familyId: "family-1" }), "family:family-1");
 });
