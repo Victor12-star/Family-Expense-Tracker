@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { api, setTokens, clearTokens } from "../api/client.js";
+import { api, setTokens, clearTokens, getRefreshToken } from "../api/client.js";
 
 const AuthContext = createContext(null);
 
@@ -50,9 +50,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await api.post("/auth/logout"); } catch (_) {}
-    clearTokens();
-    setUser(null);
+    const refreshToken = getRefreshToken();
+    try {
+      if (refreshToken) await api.post("/auth/logout", { refreshToken });
+    } catch (_) {
+      // Always clear the local session, even if the server is temporarily unreachable.
+    } finally {
+      clearTokens();
+      setUser(null);
+    }
   }, []);
 
   return (

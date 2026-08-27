@@ -1,86 +1,35 @@
-// =====================================================================
-// ErrorBoundary — catches unexpected errors so the app never goes blank
-// or silently disconnects. If something throws, the user sees a friendly
-// screen with a "Reload" button instead of losing their session.
-// =====================================================================
+// Application-level recovery boundary. Unexpected rendering failures should
+// show a safe recovery screen instead of exposing technical details or leaving
+// the user with a blank page.
 import { Component } from "react";
 
 export default class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  state = { hasError: false };
 
-  // React calls this when a child component throws during render.
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
-  // Log the error for debugging (optional — kept quiet by default).
-  componentDidCatch(error) {
-    console.error("App error:", error);
+  componentDidCatch(error, details) {
+    // Production observability can replace this with a privacy-safe reporting
+    // provider. Never include tokens, financial form contents, or chat data.
+    if (import.meta.env.DEV) console.error("Application render failure", error, details);
   }
-
-  // Let the user recover without losing their login/family (which now
-  // auto-restores on reload).
-  handleReload = () => {
-    window.location.reload();
-  };
 
   render() {
-    if (this.state.hasError) {
-      return (
-    <div style={styles.wrap}>
-      <div style={styles.card}>
-        <div style={styles.icon}>⚠️</div>
-        <h1 style={styles.h1}>Something went wrong</h1>
-        <p style={styles.p}>
-          The app hit an unexpected error. Your account and family are safe — just reload to continue.
-        </p>
-        <button type="button" onClick={this.handleReload} style={styles.btn}>
-          🔄 Reload
-        </button>
-      </div>
-    </div>
-      );
-    }
-    return this.props.children;
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <main className="fatal-error" role="alert">
+        <section className="fatal-error-card">
+          <p className="eyebrow">Recovery</p>
+          <h1>Something went wrong</h1>
+          <p>Your saved information is still protected. Reload the application to continue.</p>
+          <button className="btn primary" type="button" onClick={() => window.location.reload()}>
+            Reload application
+          </button>
+        </section>
+      </main>
+    );
   }
 }
-
-// Inline styles (kept here so the error screen works even if CSS fails to load).
-const styles = {
-  wrap: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#0f172a",
-    color: "#f1f5f9",
-    fontFamily: "Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-    padding: 20,
-  },
-  card: {
-    background: "#1e293b",
-    border: "1px solid #334155",
-    borderRadius: 18,
-    padding: "32px 28px",
-    textAlign: "center",
-    maxWidth: 420,
-    boxShadow: "0 20px 50px rgba(0,0,0,.4)",
-  },
-  icon: { fontSize: 44, marginBottom: 8 },
-  h1: { fontSize: 22, margin: "0 0 8px" },
-  p: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 },
-  btn: {
-    fontFamily: "inherit",
-    fontSize: 15,
-    fontWeight: 700,
-    padding: "12px 22px",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    background: "#6366f1",
-    color: "#fff",
-  },
-};

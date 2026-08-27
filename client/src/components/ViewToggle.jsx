@@ -1,22 +1,21 @@
-// =====================================================================
-// ViewToggle — switch between Family and Individual views
-// =====================================================================
 export default function ViewToggle({ view, setView }) {
   return (
-    <div className="view-toggle" role="group" aria-label="View">
+    <div className="view-toggle" role="group" aria-label="Expense workspace">
       <button
         type="button"
         className={`view-btn ${view === "family" ? "active" : ""}`}
         onClick={() => setView("family")}
+        aria-pressed={view === "family"}
       >
         Family
       </button>
       <button
         type="button"
-        className={`view-btn ${view === "individual" ? "active" : ""}`}
-        onClick={() => setView("individual")}
+        className={`view-btn ${view === "single" ? "active" : ""}`}
+        onClick={() => setView("single")}
+        aria-pressed={view === "single"}
       >
-        Individual
+        Single
       </button>
     </div>
   );

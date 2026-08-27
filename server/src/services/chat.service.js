@@ -1,76 +1,53 @@
-// =====================================================================
-// Chat service — message history for family chat
-// =====================================================================
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/prisma.js";
+import { createError } from "../utils/apiError.js";
 
-const prisma = new PrismaClient();
+const userSelect = { id: true, name: true };
 
-export async function listMessages(familyId, limit = 100) {
-  // Only family-group messages (directWithId is null). Direct 1-on-1 messages
-  // are handled by listDirectMessages and don't appear in the group chat.
+export async function listMessages(familyId, limit = 120) {
   return prisma.chatMessage.findMany({
-    where: { familyId, directWithId: null },
+    where: { familyId },
     orderBy: { createdAt: "desc" },
-    take: limit,
-    include: { user: { select: { name: true } } },
+    take: Math.min(Math.max(Number(limit) || 120, 20), 250),
+    include: {
+      user: { select: userSelect },
+      replyTo: { include: { user: { select: userSelect } } },
+    },
   });
 }
 
-export async function createMessage({ userId, familyId, message, isVoice, duration }) {
+export async function createMessage({ userId, familyId, message, isVoice, duration, replyToId }) {
+  let replyTo = null;
+  if (replyToId) {
+    replyTo = await prisma.chatMessage.findFirst({ where: { id: replyToId, familyId } });
+    if (!replyTo) throw createError(400, "Reply target is not available in this chat", "INVALID_REPLY");
+  }
+
   return prisma.chatMessage.create({
     data: {
       userId,
       familyId,
       message,
       isVoice: isVoice === true,
-      duration: isVoice === true ? (duration || 0) : 0, // only store duration for voice
-      directWithId: null, // this is a group message
+      duration: Math.max(0, Number(duration) || 0),
+      replyToId: replyTo?.id || null,
     },
-    include: { user: { select: { name: true } } },
+    include: {
+      user: { select: userSelect },
+      replyTo: { include: { user: { select: userSelect } } },
+    },
   });
 }
 
-// List the 1-on-1 conversation between two members of a family.
-// We match on both directions so the same thread is shown to each person.
-export async function listDirectMessages(familyId, userA, userB, limit = 100) {
-  return prisma.chatMessage.findMany({
-    where: {
-      familyId,
-      OR: [
-        { userId: userA, directWithId: userB },
-        { userId: userB, directWithId: userA },
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    include: { user: { select: { name: true } } },
+export async function deleteMessageForEveryone({ id, userId, familyId }) {
+  const message = await prisma.chatMessage.findFirst({ where: { id, familyId } });
+  if (!message) throw createError(404, "Message not found", "NOT_FOUND");
+  if (message.userId !== userId) throw createError(403, "You can only delete your own message for everyone", "FORBIDDEN");
+  return prisma.chatMessage.update({
+    where: { id },
+    data: { message: "", isVoice: false, duration: 0, deletedAt: new Date() },
   });
-}
-
-// Create a direct (1-on-1) message between two members of a family.
-export async function createDirectMessage({ userId, familyId, toUserId, message, isVoice, duration }) {
-  return prisma.chatMessage.create({
-    data: {
-      userId,
-      familyId,
-      message,
-      isVoice: isVoice === true,
-      duration: isVoice === true ? (duration || 0) : 0,
-      directWithId: toUserId, // marks this as a private thread with `toUserId`
-    },
-    include: { user: { select: { name: true } } },
-  });
-}
-
-export async function deleteMessage({ id, userId, familyId }) {
-  const message = await prisma.chatMessage.findUnique({ where: { id } });
-  if (!message) throw new Error("Message not found");
-  if (message.userId !== userId) throw new Error("Not authorized");
-  await prisma.chatMessage.delete({ where: { id } });
-  return true;
 }
 
 export async function deleteAllMessages(familyId) {
-  await prisma.chatMessage.deleteMany({ where: { familyId } });
-  return true;
+  return prisma.chatMessage.deleteMany({ where: { familyId } });
 }

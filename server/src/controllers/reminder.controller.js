@@ -1,47 +1,50 @@
-// =====================================================================
-// Reminder controller
-// =====================================================================
 import {
-  listReminders, createReminder, updateReminder, deleteReminder,
+  clearOwnedReminders,
+  createReminder,
+  createScopedReminder,
+  deleteReminder,
+  listReminders,
+  listScopedReminders,
+  updateReminder,
 } from "../services/reminder.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const getReminders = asyncHandler(async (req, res) => {
-  const reminders = await listReminders(req.params.familyId);
-  res.json(reminders);
+function reminderData(body) {
+  return {
+    title: body.title,
+    date: body.date,
+    time: body.time,
+    repeat: body.repeat,
+    type: body.type,
+    category: body.category,
+    remindBeforeMinutes: body.remindBeforeMinutes,
+    sound: body.sound,
+  };
+}
+
+export const getScopedReminders = asyncHandler(async (req, res) => {
+  res.json(await listScopedReminders({ userId: req.user.id, view: req.query.view, familyId: req.query.familyId }));
 });
 
-export const addReminder = asyncHandler(async (req, res) => {
-  const reminder = await createReminder({
+export const addScopedReminder = asyncHandler(async (req, res) => {
+  const reminder = await createScopedReminder({
     userId: req.user.id,
-    familyId: req.params.familyId,
-    data: {
-      title: req.body.title,
-      date: new Date(req.body.date),
-      time: req.body.time,
-      repeat: req.body.repeat || "NONE",
-      type: req.body.type || "REMINDER",
-    },
+    view: req.body.view,
+    familyId: req.body.familyId,
+    data: reminderData(req.body),
   });
   res.status(201).json(reminder);
 });
 
-export const editReminder = asyncHandler(async (req, res) => {
-  const reminder = await updateReminder({
-    id: req.params.id,
-    userId: req.user.id,
-    data: {
-      title: req.body.title,
-      date: req.body.date ? new Date(req.body.date) : undefined,
-      time: req.body.time,
-      repeat: req.body.repeat,
-      type: req.body.type,
-    },
-  });
-  res.json(reminder);
+export const clearScopedReminders = asyncHandler(async (req, res) => {
+  const result = await clearOwnedReminders({ userId: req.user.id, view: req.body.view, familyId: req.body.familyId });
+  res.json({ deleted: result.count });
 });
 
-export const removeReminder = asyncHandler(async (req, res) => {
-  await deleteReminder({ id: req.params.id, userId: req.user.id });
-  res.status(204).end();
+export const getReminders = asyncHandler(async (req, res) => res.json(await listReminders(req.params.familyId)));
+export const addReminder = asyncHandler(async (req, res) => {
+  const reminder = await createReminder({ userId: req.user.id, familyId: req.params.familyId, data: reminderData(req.body) });
+  res.status(201).json(reminder);
 });
+export const editReminder = asyncHandler(async (req, res) => res.json(await updateReminder({ id: req.params.id, userId: req.user.id, data: reminderData(req.body) })));
+export const removeReminder = asyncHandler(async (req, res) => { await deleteReminder({ id: req.params.id, userId: req.user.id }); res.status(204).end(); });

@@ -15,6 +15,45 @@ const EMOJIS = [
 
 const SHORTCUTS = { ":)": "😀", ":(": "😢", ":D": "😁", "<3": "❤️", ":P": "😛" };
 
+// ---- VoiceMessage component: reliable click-to-play ----
+function VoiceMessage({ src, duration }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  function togglePlay() {
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play().catch(() => {});
+      setPlaying(true);
+    }
+  }
+
+  return (
+    <div className="voice-msg">
+      <button
+        type="button"
+        className={`voice-play-btn ${playing ? "playing" : ""}`}
+        onClick={togglePlay}
+        aria-label={playing ? "Pause voice message" : "Play voice message"}
+      >
+        {playing ? "⏸️" : "▶️"}
+      </button>
+      {/* Hidden audio element — we control playback with the button */}
+      <audio
+        ref={audioRef}
+        src={src}
+        onEnded={() => setPlaying(false)}
+        onPause={() => setPlaying(false)}
+        style={{ display: "none" }}
+      />
+      {duration > 0 && <span className="voice-duration">{duration}s</span>}
+    </div>
+  );
+}
+
 export default function Chat() {
   const { family, view } = useFamily();
   const { user } = useAuth();
@@ -22,24 +61,16 @@ export default function Chat() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showAttach, setShowAttach] = useState(false); // camera / gallery menu
-  const [uploadingPhoto, setUploadingPhoto] = useState(false); // photo is being sent
   const [recording, setRecording] = useState(false);
-  const [lightbox, setLightbox] = useState(null); // full-screen image viewer (holds src) or null
-  // directWith = the member you're in a private 1-on-1 chat with (null = family group chat)
-  const [directWith, setDirectWith] = useState(null);
 
-  // Two hidden file inputs: one forces the phone camera, one opens the gallery.
-  const cameraInputRef = useRef(null);
-  const galleryInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
-  const recordStartRef = useRef(null); // timestamp when recording started
+  const recordStartRef = useRef(null);
   const bottomRef = useRef(null);
 
-  // Avatar colours — on-brand, distinct, and readable on both themes.
-  const USER_COLORS = ["#6366f1", "#0d9488", "#16a34a", "#d97706", "#dc2626", "#7c3aed"];
+  const USER_COLORS = ["#38bdf8", "#818cf8", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
 
   function colorFor(name) {
     if (!name) return USER_COLORS[0];
@@ -58,55 +89,27 @@ export default function Chat() {
     return typeof msg.message === "string" && msg.message.startsWith("💸");
   }
 
-  // Load messages — loads the family group chat, or the 1-on-1 thread if
-  // a member is selected (directWith).
+  // Load messages
   async function loadMessages() {
     if (!family) return;
     try {
-      const base = directWith
-        ? `/chat/${family.id}/direct/${directWith.id}`
-        : `/chat/${family.id}`;
-      const r = await api.get(base);
+      const r = await api.get(`/chat/${family.id}`);
       setMessages(r.data);
     } catch (_) {}
   }
 
-  // Poll for new messages, but ONLY while the tab is visible and in focus.
-  // Re-fetching (and re-decoding) every photo every few seconds crashes phones,
-  // so we pause when the user isn't looking at the chat.
+  // Load on family change + poll every 3s so new messages always show
   useEffect(() => {
     if (!family) return;
-
-    const refresh = () => {
-      if (document.visibilityState === "visible" && !document.hidden) {
-        loadMessages();
-      }
-    };
-
-    // Load immediately, then poll every 4s only when the tab is visible.
-    refresh();
-    const interval = setInterval(refresh, 4000);
-    document.addEventListener("visibilitychange", refresh);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", refresh);
-    };
-  }, [family, directWith]);
+    loadMessages();
+    const interval = setInterval(loadMessages, 3000);
+    return () => clearInterval(interval);
+  }, [family]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Close the full-screen photo viewer with the Escape key
-  useEffect(() => {
-    if (!lightbox) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") setLightbox(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightbox]);
 
   // Send text
   async function send(e) {
@@ -119,10 +122,7 @@ export default function Chat() {
     setSending(true);
     setText("");
     try {
-      const url = directWith
-        ? `/chat/${family.id}/direct/${directWith.id}`
-        : `/chat/${family.id}`;
-      await api.post(url, { message: msg });
+      await api.post(`/chat/${family.id}`, { message: msg });
       await loadMessages();
     } catch (err) {
       console.error("Send failed:", err);
@@ -138,7 +138,7 @@ export default function Chat() {
     setShowEmoji(false);
   }
 
-    // Delete a single message (only your own)
+  // Delete a single message (only your own)
   async function deleteOne(id) {
     if (!family || !id) return;
     try {
@@ -159,81 +159,19 @@ export default function Chat() {
     } catch (_) {}
   }
 
-  // Downscale + compress an image to a small JPEG so it uploads quickly and
-  // won't crash the phone when re-rendered. We use the classic <img> decode +
-  // canvas, which is the most reliable across browsers (handles both JPEG photos
-  // from Android and HEIC photos from iPhones, and respects EXIF orientation).
-  // Camera photos are large, so we downscale to a modest size for fast upload.
-  function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      try {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-
-        img.onload = () => {
-          try {
-            URL.revokeObjectURL(url);
-            const MAX = 1024; // longest side in px (smaller = faster on camera pics)
-            let { width, height } = img;
-            if (width > height && width > MAX) {
-              height = Math.round((height * MAX) / width);
-              width = MAX;
-            } else if (height > MAX) {
-              width = Math.round((width * MAX) / height);
-              height = MAX;
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
-
-            // A real photo is tens of KB as base64. If the result is suspiciously
-            // tiny, the image likely failed to draw to canvas (blank). Reject so
-            // we never post a blank image. (Threshold is low enough that normal
-            // small gallery images still pass.)
-            if (!dataUrl || dataUrl.length < 8000) {
-              reject(new Error("Image could not be read"));
-              return;
-            }
-            resolve(dataUrl);
-          } catch (err) {
-            reject(err);
-          }
-        };
-
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error("Cannot decode image"));
-        };
-        img.src = url;
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
-  // Handle photo/file upload (from camera or gallery)
-  async function handleFile(e) {
+  // Handle photo/file upload
+  function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file || !family) return;
-    setShowAttach(false);
-    setUploadingPhoto(true);
-    try {
-      // Always compress — this keeps the photo small and prevents browser crashes.
-      const dataUrl = await compressImage(file);
-      const url = directWith
-        ? `/chat/${family.id}/direct/${directWith.id}`
-        : `/chat/${family.id}`;
-      await api.post(url, { message: dataUrl });
-      await loadMessages();
-    } catch (err) {
-      console.error("Photo upload failed:", err);
-      alert("Sorry, that photo couldn't be sent. Please try a different picture.");
-    } finally {
-      setUploadingPhoto(false);
-      e.target.value = ""; // allow re-selecting the same file next time
-    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        await api.post(`/chat/${family.id}`, { message: reader.result });
+        await loadMessages();
+      } catch (_) {}
+      e.target.value = "";
+    };
+    reader.readAsDataURL(file);
   }
 
   // ---- PRESS-AND-HOLD VOICE RECORDING ----
@@ -249,41 +187,33 @@ export default function Chat() {
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
+      recordStartRef.current = Date.now();
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
+        const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
+        const durationSec = Math.round(durationMs / 1000);
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
-        // Calculate the recording length in whole seconds
-        const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
-        const durationSec = Math.round(durationMs / 1000);
-        recordStartRef.current = null;
         if (blob.size > 0) {
           const reader = new FileReader();
           reader.onload = async () => {
             try {
-              const url = directWith
-                ? `/chat/${family.id}/direct/${directWith.id}`
-                : `/chat/${family.id}`;
-              await api.post(url, {
+              await api.post(`/chat/${family.id}`, {
                 message: reader.result,
                 isVoice: true,
                 duration: durationSec,
               });
               await loadMessages();
-            } catch (err) {
-              console.error("Voice send failed:", err);
-              alert("Voice message failed to send.");
-            }
+            } catch (_) {}
           };
           reader.readAsDataURL(blob);
         }
       };
 
-      recordStartRef.current = Date.now(); // mark the moment recording began
       recorder.start();
       setRecording(true);
     } catch (err) {
@@ -305,12 +235,12 @@ export default function Chat() {
   if (view === "individual") {
     return (
       <div className="page">
-      <div className="page-head">
-        <h2>Family Chat</h2>
-        <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
-          🗑️ Clear chat
-        </button>
-      </div>
+        <div className="page-head">
+          <h2>Family Chat</h2>
+          <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
+            🗑️ Clear chat
+          </button>
+        </div>
         <div className="card">
           <p className="empty">🔒 Chat is only available in <strong>Family</strong> view.</p>
         </div>
@@ -325,23 +255,16 @@ export default function Chat() {
   return (
     <div className="page">
       <div className="page-head">
-        <h2>{directWith ? `Chat with ${directWith.user?.name || "member"}` : "Family Chat"}</h2>
-        {directWith && (
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => { setDirectWith(null); setShowAttach(false); }}
-            title="Back to family chat"
-          >
-            ← Family chat
-          </button>
-        )}
+        <h2>Family Chat</h2>
+        <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
+          🗑️ Clear chat
+        </button>
       </div>
 
       <div className="messaging-layout">
         <aside className="chat-sidebar" aria-label="Conversation details">
           <div className="sidebar-head">
-            <div className="sidebar-avatar">👨‍👩‍👧‍👦</div>
+            <div className="sidebar-avatar"></div>
             <div>
               <h3>{family?.name || "Family"}</h3>
               <span className="sidebar-status">
@@ -350,34 +273,19 @@ export default function Chat() {
             </div>
           </div>
           <div className="sidebar-members">
-            <h4>Members — tap to message</h4>
-            {family?.members?.map((m) => {
-              const isMe = m.user?.id === user?.id;
-              return (
-                <button
-                  type="button"
-                  className={`sidebar-member member-btn ${directWith?.id === m.user?.id ? "member-active" : ""}`}
-                  key={m.id}
-                  onClick={() => {
-                    if (!isMe) {
-                      setDirectWith(m.user); // open a private 1-on-1 chat
-                      setShowAttach(false);
-                    }
-                  }}
-                  disabled={isMe}
-                  aria-label={isMe ? `${m.user?.name} (you)` : `Message ${m.user?.name} privately`}
-                >
-                  <span className="member-avatar" style={{ background: colorFor(m.user?.name) }}>
-                    {m.user?.name?.[0]?.toUpperCase()}
-                  </span>
-                  <span className="member-name">{m.user?.name}{isMe ? " (you)" : ""}</span>
-                  <span className="member-role">{m.role}</span>
-                </button>
-              );
-            })}
+            <h4>Members</h4>
+            {family?.members?.map((m) => (
+              <div className="sidebar-member" key={m.id}>
+                <span className="member-avatar" style={{ background: colorFor(m.user?.name) }}>
+                  {m.user?.name?.[0]?.toUpperCase()}
+                </span>
+                <span className="member-name">{m.user?.name}</span>
+                <span className="member-role">{m.role}</span>
+              </div>
+            ))}
           </div>
           <div className="sidebar-note">
-            <p>💡 Tap a family member to start a private 1-on-1 chat.</p>
+            <p>💡 Tip: Add expenses and they'll appear here automatically.</p>
           </div>
         </aside>
 
@@ -402,25 +310,13 @@ export default function Chat() {
                       {isSystem ? "💰 Expense" : m.user?.name}
                     </div>
                     {isVoice ? (
-                      <div className="voice-msg">
-                        <audio controls src={m.message} className="chat-audio">Your browser does not support audio.</audio>
-                        {m.duration > 0 && <span className="voice-duration">{m.duration}s</span>}
-                      </div>
+                      <VoiceMessage src={m.message} duration={m.duration} />
                     ) : isImage ? (
-                      // Clicking a photo opens it full-screen (lightbox) so only
-                      // the image is zoomed — never the whole chat.
-                      <button
-                        type="button"
-                        className="chat-image-btn"
-                        onClick={() => setLightbox(m.message)}
-                        aria-label="View photo full screen"
-                      >
-                        <img src={m.message} alt="Shared in chat" className="chat-image" loading="lazy" />
-                      </button>
+                      <img src={m.message} alt="Shared in chat" className="chat-image" />
                     ) : (
                       <div>{m.message}</div>
                     )}
-                      <div className="cb-time">
+                    <div className="cb-time">
                       {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                     </div>
                     {/* Delete this message (own messages only) */}
@@ -440,7 +336,7 @@ export default function Chat() {
               );
             })}
             {sortedMessages.length === 0 && (
-              <p className="empty"></p>
+              <p className="empty">No messages yet. Say hi to your family! 👋</p>
             )}
             <div ref={bottomRef} />
           </div>
@@ -456,45 +352,9 @@ export default function Chat() {
           <form className="chat-input" onSubmit={send}>
             <button type="button" className="chat-tool-btn" onClick={() => setShowEmoji(!showEmoji)} title="Emoji">😀</button>
 
-            {/* Camera / gallery button */}
-            {/* capture="environment" opens the phone's rear camera directly */}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              style={{ display: "none" }}
-              onChange={handleFile}
-            />
-            {/* No capture attribute -> opens the gallery / file picker */}
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleFile}
-            />
-            <button
-              type="button"
-              className="chat-tool-btn"
-              onClick={() => setShowAttach(!showAttach)}
-              title="Attach photo"
-              aria-haspopup="true"
-              aria-expanded={showAttach}
-            >
-              📷
-            </button>
-
-            {showAttach && (
-              <div className="attach-menu" role="menu" aria-label="Add photo">
-                <button type="button" className="attach-item" role="menuitem" onClick={() => cameraInputRef.current?.click()}>
-                  📸 Take Photo
-                </button>
-                <button type="button" className="attach-item" role="menuitem" onClick={() => galleryInputRef.current?.click()}>
-                  🖼️ Choose from Gallery
-                </button>
-              </div>
-            )}
+            {/* Photo button */}
+            <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+            <button type="button" className="chat-tool-btn" onClick={() => photoInputRef.current?.click()} title="Photo">📷</button>
 
             {/* Press-and-hold voice button */}
             <button
@@ -511,7 +371,6 @@ export default function Chat() {
               {recording ? "⏹️" : "🎙️"}
             </button>
             {recording && <span className="recording-indicator">● Recording… release to send</span>}
-            {uploadingPhoto && <span className="uploading-indicator">Sending photo…</span>}
 
             <label className="sr-only" htmlFor="chat-text">Message</label>
             <input id="chat-text" placeholder="Type a message…" value={text} onChange={(e) => setText(e.target.value)} disabled={sending} />
@@ -519,22 +378,6 @@ export default function Chat() {
           </form>
         </div>
       </div>
-
-      {/* Full-screen photo viewer (lightbox). Tapping the image opens it here so
-          only the photo is zoomed, not the whole chat. Tap anywhere to close. */}
-      {lightbox && (
-        <div className="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" onClick={() => setLightbox(null)}>
-          <img src={lightbox} alt="Photo enlarged" className="lightbox-img" />
-          <button
-            type="button"
-            className="lightbox-close"
-            onClick={() => setLightbox(null)}
-            aria-label="Close photo"
-          >
-            ✕
-          </button>
-        </div>
-      )}
     </div>
   );
 }

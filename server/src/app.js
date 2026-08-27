@@ -10,6 +10,7 @@ import familyRoutes from "./routes/family.routes.js";
 import reminderRoutes from "./routes/reminder.routes.js";
 import shoppingRoutes from "./routes/shopping.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import budgetRoutes from "./routes/budget.routes.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -17,9 +18,7 @@ app.set("trust proxy", 1);
 app.use(securityHeaders());
 app.use(corsPolicy());
 app.use(globalLimiter);
-// Allow larger request bodies so photos (base64 images) and voice recordings can
-// be uploaded through chat. The default (100kb) is too small for a photo.
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "3mb" }));
 
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
@@ -27,6 +26,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toIS
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/expenses", expenseRoutes);
+app.use("/api/budgets", budgetRoutes);
 app.use("/api/families", familyRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/chat", chatRoutes);

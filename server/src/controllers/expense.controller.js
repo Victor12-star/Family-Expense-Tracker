@@ -1,14 +1,12 @@
-// =====================================================================
-// Expense controller
-// =====================================================================
-import {
-  listExpenses, createExpense, updateExpense, deleteExpense,
-} from "../services/expense.service.js";
+import { listExpenses, createExpense, updateExpense, deleteExpense } from "../services/expense.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const getExpenses = asyncHandler(async (req, res) => {
-  const { familyId, view } = req.query;
-  const expenses = await listExpenses({ userId: req.user.id, familyId, view });
+  const expenses = await listExpenses({
+    userId: req.user.id,
+    familyId: req.query.familyId,
+    view: req.query.view,
+  });
   res.json(expenses);
 });
 
@@ -16,11 +14,12 @@ export const addExpense = asyncHandler(async (req, res) => {
   const expense = await createExpense({
     userId: req.user.id,
     familyId: req.body.familyId,
+    view: req.body.view,
     data: {
       name: req.body.name,
       amount: req.body.amount,
       currency: req.body.currency,
-      category: req.body.category,
+      category: req.body.category || "Other",
       note: req.body.note,
       date: new Date(req.body.date),
       isPrivate: req.body.isPrivate,

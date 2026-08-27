@@ -3,11 +3,10 @@
 // Security: bcrypt hashing, refresh token hashing & rotation, generic errors
 // =====================================================================
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/prisma.js";
 import { createError } from "../utils/apiError.js";
 import { signAccessToken, signRefreshToken, hashToken } from "./token.service.js";
 
-const prisma = new PrismaClient();
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
 
 export async function registerUser({ name, email, password }) {

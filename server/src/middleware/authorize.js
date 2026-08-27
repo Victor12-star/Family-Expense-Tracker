@@ -1,25 +1,57 @@
 // =====================================================================
 // Authorization middleware — role-based access control (RBAC)
-// Ensures the current user is a member of a family with the required role
 // =====================================================================
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/prisma.js";
 import { createError } from "../utils/apiError.js";
-
-const prisma = new PrismaClient();
 
 const ROLE_RANK = { OWNER: 3, ADMIN: 2, MEMBER: 1 };
 
-// Checks the user belongs to the family in the request params/body
-export async function requireFamilyMember(req, _res, next) {
+export async function getFamilyMembership(userId, familyId) {
+  if (!userId || !familyId) return null;
+  return prisma.membership.findUnique({
+    where: { userId_familyId: { userId, familyId } },
+  });
+}
+
+// Require membership using an explicitly named route parameter.
+// Avoid guessing from generic params such as `id`, because those IDs may refer
+// to an expense, reminder, shopping item, or message rather than a family.
+export function requireFamilyMemberParam(paramName = "familyId") {
+  return async (req, _res, next) => {
+    try {
+      const familyId = req.params[paramName];
+      if (!familyId) {
+        return next(createError(400, "familyId required", "MISSING_FAMILY"));
+      }
+
+      const membership = await getFamilyMembership(req.user.id, familyId);
+      if (!membership) {
+        return next(createError(403, "Not a member of this family", "FORBIDDEN"));
+      }
+
+      req.familyId = familyId;
+      req.membership = membership;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
+
+// Require membership when the family ID is supplied in the request body.
+export async function requireFamilyMemberBody(req, _res, next) {
   try {
-    const familyId = req.params.familyId || req.params.id || req.body.familyId;
-    if (!familyId) return next(createError(400, "familyId required", "MISSING_FAMILY"));
+    const familyId = req.body.familyId;
+    if (!familyId) {
+      return next(createError(400, "familyId required", "MISSING_FAMILY"));
+    }
 
-    const membership = await prisma.membership.findUnique({
-      where: { userId_familyId: { userId: req.user.id, familyId } },
-    });
-    if (!membership) return next(createError(403, "Not a member of this family", "FORBIDDEN"));
+    const membership = await getFamilyMembership(req.user.id, familyId);
+    if (!membership) {
+      return next(createError(403, "Not a member of this family", "FORBIDDEN"));
+    }
 
+    req.familyId = familyId;
     req.membership = membership;
     return next();
   } catch (err) {
@@ -27,7 +59,7 @@ export async function requireFamilyMember(req, _res, next) {
   }
 }
 
-// Requires a minimum role rank
+// Requires a minimum role rank after a membership middleware has run.
 export function requireRole(minRole) {
   return (req, _res, next) => {
     if (!req.membership) return next(createError(403, "Forbidden", "FORBIDDEN"));

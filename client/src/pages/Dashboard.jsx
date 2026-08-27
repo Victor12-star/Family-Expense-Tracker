@@ -1,13 +1,25 @@
-// =====================================================================
-// Dashboard — home page with summary cards + quick actions
-// =====================================================================
-import { useEffect, useState } from "react";
+import {
+  AlarmClock,
+  CalendarDays,
+  Plus,
+  ReceiptText,
+  ShoppingBasket,
+  Wallet,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useCurrency } from "../context/CurrencyContext.jsx";
 import { api } from "../api/client.js";
-import { money, currentMonth } from "../utils/format.js";
+import { apiView, currentMonth, money } from "../utils/format.js";
+
+function greetingFor(date) {
+  const hour = date.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -17,122 +29,149 @@ export default function Dashboard() {
   const [reminders, setReminders] = useState([]);
   const [now, setNow] = useState(new Date());
 
-  // Update the clock every second
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    if (!family) return;
-    api.get("/expenses", { params: { familyId: family.id, view } })
-      .then((res) => setExpenses(res.data))
-      .catch(() => {});
-    api.get(`/reminders/${family.id}`)
-      .then((res) => setReminders(res.data))
-      .catch(() => {});
+    if (!family) {
+      setExpenses([]);
+      setReminders([]);
+      return;
+    }
+
+    Promise.allSettled([
+      api.get("/expenses", { params: { familyId: family.id, view: apiView(view) } }),
+      api.get(`/reminders/${family.id}`),
+    ]).then(([expenseResult, reminderResult]) => {
+      if (expenseResult.status === "fulfilled") setExpenses(expenseResult.value.data);
+      if (reminderResult.status === "fulfilled") setReminders(reminderResult.value.data);
+    });
   }, [family, view]);
 
-  // Format the current date and time
-  const dateStr = now.toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const monthExpenses = useMemo(
+    () => expenses.filter((expense) => (expense.date || "").startsWith(currentMonth())),
+    [expenses]
+  );
+  const monthTotal = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
-  const monthExpenses = expenses.filter((e) => (e.date || "").startsWith(currentMonth()));
-  const monthTotal = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayReminders = reminders.filter((reminder) => (reminder.date || "").slice(0, 10) === localToday);
 
-  // Today's reminders (by date)
-  const today = now.toISOString().slice(0, 10);
-  const todayReminders = reminders.filter((r) => (r.date || "").slice(0, 10) === today);
+  const timeStr = now.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const firstName = user?.name?.trim()?.split(/\s+/)[0] || "there";
 
   return (
-    <div className="page">
-      <div className="page-head">
-        <div className="dash-brand">
-          {/* Large app logo */}
-          <img src="/logo.png" alt="Family Expense Tracker logo" className="dash-logo" />
-          <div>
-            <h2>Good day {user?.name} </h2>
-            <p className="subtitle">{view === "family" ? "Family view" : "Individual view"}</p>
-          </div>
+    <div className="page dashboard-page">
+      <section className="dashboard-hero">
+        <div className="dashboard-welcome">
+          <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
+          <h1>{greetingFor(now)}, {firstName}</h1>
+          <p>Here is your financial overview for today.</p>
         </div>
-        <Link to="/expenses" className="btn primary">+ Add</Link>
-      </div>
+        <Link to="/expenses" className="btn primary hero-add">
+          <Plus size={18} aria-hidden="true" />
+          Add expense
+        </Link>
+      </section>
 
-      {/* Modern date & time banner */}
-      <section className="datetime-card" aria-label="Current date and time">
+      <section className="datetime-card compact" aria-label="Current date and time">
         <div className="dt-left">
-          <span className="dt-weekday">{now.toLocaleDateString([], { weekday: "long" })}</span>
-          <span className="dt-day">{now.getDate()}</span>
-          <span className="dt-month">{now.toLocaleDateString([], { month: "long", year: "numeric" })}</span>
+          <CalendarDays size={22} aria-hidden="true" />
+          <div>
+            <strong>{now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</strong>
+            <span>{now.getFullYear()}</span>
+          </div>
         </div>
         <div className="dt-right">
           <span className="dt-time">{timeStr}</span>
-          <span className="dt-live" role="status" aria-live="off">● LIVE</span>
+          <span className="dt-live">Live</span>
         </div>
       </section>
 
-      <div className="summary">
+      <section className="summary" aria-label="Financial summary">
         <article className="stat">
+          <div className="stat-icon"><ReceiptText size={20} /></div>
           <span className="stat-label">This month</span>
           <output className="stat-value">{money(monthTotal, currency)}</output>
-          <span className="stat-note">{monthExpenses.length} expenses</span>
+          <span className="stat-note">{monthExpenses.length} {monthExpenses.length === 1 ? "expense" : "expenses"}</span>
         </article>
         <article className="stat">
-          <span className="stat-label">Budget</span>
+          <div className="stat-icon"><Wallet size={20} /></div>
+          <span className="stat-label">Monthly budget</span>
           <output className="stat-value">—</output>
-          <span className="stat-note">Set a budget</span>
+          <Link to="/settings" className="stat-note stat-link">Set a budget</Link>
         </article>
         <article className="stat">
+          <div className="stat-icon"><AlarmClock size={20} /></div>
           <span className="stat-label">Due today</span>
           <output className="stat-value">{todayReminders.length}</output>
-          <span className="stat-note">reminders</span>
+          <span className="stat-note">{todayReminders.length === 1 ? "reminder" : "reminders"}</span>
         </article>
-      </div>
+      </section>
 
-      {/* Today's reminders */}
       {todayReminders.length > 0 && (
-        <div className="card">
+        <section className="card">
           <div className="card-head">
-            <h3>Today's reminders ⏰</h3>
-            <Link to="/calendar" className="link-btn">All</Link>
+            <div>
+              <span className="eyebrow">Today</span>
+              <h2>Upcoming reminders</h2>
+            </div>
+            <Link to="/calendar" className="link-btn">View calendar</Link>
           </div>
-          {todayReminders.map((r) => (
-            <div className="list-item" key={r.id}>
-              <div>
-                <div className="li-title">{r.title}</div>
-                <div className="li-sub">{r.time || "anytime"}</div>
+          {todayReminders.slice(0, 4).map((reminder) => (
+            <div className="list-item" key={reminder.id}>
+              <div className="list-icon"><AlarmClock size={18} /></div>
+              <div className="list-copy">
+                <div className="li-title">{reminder.title}</div>
+                <div className="li-sub">{reminder.time || "Any time"}</div>
               </div>
-              <span className="badge">{r.time || "—"}</span>
+              <span className="badge">{reminder.time || "Today"}</span>
             </div>
           ))}
-        </div>
+        </section>
       )}
 
-      <div className="quick-actions">
-        <Link to="/expenses" className="qa">💸 Expense</Link>
-        <Link to="/calendar" className="qa">⏰ Reminder</Link>
-        <Link to="/shopping" className="qa">🛒 Shopping</Link>
-      </div>
+      <section className="quick-actions" aria-label="Quick actions">
+        <Link to="/expenses" className="qa"><ReceiptText size={22} /><span>Expense</span></Link>
+        <Link to="/calendar" className="qa"><AlarmClock size={22} /><span>Reminder</span></Link>
+        <Link to="/shopping" className="qa"><ShoppingBasket size={22} /><span>Shopping</span></Link>
+      </section>
 
-      <div className="card">
+      <section className="card">
         <div className="card-head">
-          <h3>Recent expenses</h3>
+          <div>
+            <span className="eyebrow">Latest activity</span>
+            <h2>Recent expenses</h2>
+          </div>
           <Link to="/expenses" className="link-btn">See all</Link>
         </div>
         {monthExpenses.length === 0 ? (
-          <p className="empty">No expenses yet this month.</p>
+          <div className="empty-state">
+            <div className="empty-icon"><ReceiptText size={28} /></div>
+            <h3>No expenses yet this month</h3>
+            <p>Your recent expenses will appear here once you start tracking them.</p>
+            <Link to="/expenses" className="btn secondary"><Plus size={17} /> Add first expense</Link>
+          </div>
         ) : (
-          monthExpenses.slice(0, 5).map((e) => (
-            <div className="list-item" key={e.id}>
-              <div>
-                <div className="li-title">{e.name}</div>
-                <div className="li-sub">{e.category}</div>
+          monthExpenses.slice(0, 5).map((expense) => (
+            <div className="list-item" key={expense.id}>
+              <div className="list-icon"><ReceiptText size={18} /></div>
+              <div className="list-copy">
+                <div className="li-title">{expense.name}</div>
+                <div className="li-sub">{expense.category || "Other"}</div>
               </div>
-              <span className="li-amt">{money(e.amount, currency)}</span>
+              <span className="li-amt">{money(expense.amount, currency)}</span>
             </div>
           ))
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -17,6 +17,10 @@ export function setTokens({ accessToken: at, refreshToken: rt }) {
   if (rt) localStorage.setItem("fet_refresh", rt);
 }
 
+export function getRefreshToken() {
+  return refreshToken;
+}
+
 export function clearTokens() {
   accessToken = null;
   refreshToken = null;

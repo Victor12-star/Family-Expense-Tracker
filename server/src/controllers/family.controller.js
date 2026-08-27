@@ -1,5 +1,13 @@
 import {
-  createFamily, getFamily, joinFamily, setMemberRole, removeMember, getUserFamilies,
+  createFamily,
+  getFamily,
+  joinFamily,
+  setMemberRole,
+  removeMember,
+  getUserFamilies,
+  createFamilyInvite,
+  listFamilyInvites,
+  revokeFamilyInvite,
 } from "../services/family.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -9,32 +17,45 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const get = asyncHandler(async (req, res) => {
-  const family = await getFamily(req.params.id);
-  res.json(family);
+  res.json(await getFamily(req.params.id));
 });
 
-// Get the current user's families (so the app can auto-load on login)
 export const my = asyncHandler(async (req, res) => {
   const memberships = await getUserFamilies(req.user.id);
-  const families = memberships.map((m) => m.family);
-  res.json(families);
+  res.json(memberships.map((membership) => membership.family));
 });
 
 export const join = asyncHandler(async (req, res) => {
-  const family = await joinFamily({ inviteCode: req.body.inviteCode, userId: req.user.id });
-  res.json(family);
+  res.json(await joinFamily({ inviteCode: req.body.inviteCode, userId: req.user.id }));
 });
 
 export const updateRole = asyncHandler(async (req, res) => {
-  const family = await setMemberRole({
+  res.json(await setMemberRole({
     familyId: req.params.familyId,
     targetUserId: req.body.userId,
     role: req.body.role,
-  });
-  res.json(family);
+  }));
 });
 
 export const remove = asyncHandler(async (req, res) => {
   await removeMember({ familyId: req.params.familyId, targetUserId: req.params.userId });
   res.status(204).end();
+});
+
+export const createInvite = asyncHandler(async (req, res) => {
+  const invite = await createFamilyInvite({
+    familyId: req.params.familyId,
+    createdById: req.user.id,
+    expiresInHours: req.body.expiresInHours,
+    maxUses: req.body.maxUses,
+  });
+  res.status(201).json(invite);
+});
+
+export const invites = asyncHandler(async (req, res) => {
+  res.json(await listFamilyInvites(req.params.familyId));
+});
+
+export const revokeInvite = asyncHandler(async (req, res) => {
+  res.json(await revokeFamilyInvite({ familyId: req.params.familyId, inviteId: req.params.inviteId }));
 });

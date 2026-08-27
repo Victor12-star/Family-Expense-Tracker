@@ -1,28 +1,37 @@
+import {
+  CalendarDays,
+  Home,
+  MessagesSquare,
+  ReceiptText,
+  Settings,
+  ShoppingBasket,
+  UsersRound,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
-  { to: "/", icon: "🏠", label: "Home" },
-  { to: "/expenses", icon: "💸", label: "Expenses" },
-  { to: "/calendar", icon: "📅", label: "Calendar" },
-  { to: "/shopping", icon: "🛒", label: "Shopping" },
-  { to: "/chat", icon: "💬", label: "Chat" },
-  { to: "/family", icon: "👨‍👩‍👧‍👦", label: "Family" },
-  { to: "/settings", icon: "⚙️", label: "Settings" },
+  { to: "/", Icon: Home, label: "Home" },
+  { to: "/expenses", Icon: ReceiptText, label: "Expenses" },
+  { to: "/calendar", Icon: CalendarDays, label: "Calendar" },
+  { to: "/shopping", Icon: ShoppingBasket, label: "Shopping" },
+  { to: "/chat", Icon: MessagesSquare, label: "Chat" },
+  { to: "/family", Icon: UsersRound, label: "Family" },
+  { to: "/settings", Icon: Settings, label: "Settings" },
 ];
 
 export default function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
-      {items.map((item) => (
+      {items.map(({ to, Icon, label }) => (
         <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/"}
-          aria-label={item.label}
+          key={to}
+          to={to}
+          end={to === "/"}
+          aria-label={label}
           className={({ isActive }) => `bn-item ${isActive ? "active" : ""}`}
         >
-          <span className="bn-icon">{item.icon}</span>
-          <span className="bn-label">{item.label}</span>
+          <Icon className="bn-icon" size={20} strokeWidth={2} aria-hidden="true" />
+          <span className="bn-label">{label}</span>
         </NavLink>
       ))}
     </nav>
