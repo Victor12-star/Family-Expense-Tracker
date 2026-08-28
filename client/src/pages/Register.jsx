@@ -5,6 +5,16 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
+const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
+
+function registrationErrorMessage(error) {
+  const details = error.response?.data?.details;
+  if (Array.isArray(details) && details.length > 0) {
+    return details.map((item) => item.message).join(". ");
+  }
+  return error.response?.data?.message || "Registration failed. Please check your details.";
+}
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -16,10 +26,16 @@ export default function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!PASSWORD_RULE.test(password)) {
+      setError("Password must be 8 to 72 characters and include an uppercase letter, a lowercase letter, and a number.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name.trim(), email.trim(), password);
       // Registration returns a complete session, so enter the application
       // immediately instead of sending the new user through login again.
       navigate("/", { replace: true });
@@ -27,7 +43,7 @@ export default function Register() {
       if (!err.response) {
         setError("The app could not reach the registration server. Please wait a moment and try again.");
       } else {
-        setError(err.response.data?.message || "Registration failed. Please check your details.");
+        setError(registrationErrorMessage(err));
       }
     } finally {
       setLoading(false);
@@ -46,16 +62,16 @@ export default function Register() {
 
         <label className="field">
           <span>Name</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input value={name} onChange={(e) => setName(e.target.value)} minLength="1" maxLength="60" autoComplete="name" required />
         </label>
         <label className="field">
           <span>Email</span>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         </label>
         <label className="field">
           <span>Password</span>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <small>8+ chars, upper &amp; lower case, a number</small>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength="8" maxLength="72" autoComplete="new-password" aria-describedby="password-rules" required />
+          <small id="password-rules">8 to 72 characters with uppercase, lowercase, and a number</small>
         </label>
 
         <button className="btn primary" disabled={loading}>
