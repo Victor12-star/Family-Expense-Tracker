@@ -1,5 +1,4 @@
-import { LogOut } from "lucide-react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
@@ -17,19 +16,14 @@ const familyNavItems = [
 ];
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const { view, setView } = useFamily();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { family, view, setView } = useFamily();
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const availableFamilyItems = family ? familyNavItems : familyNavItems.filter(([to]) => to === "/family");
   const navItems = view === "family"
-    ? [...sharedNavItems.slice(0, 3), ...familyNavItems, sharedNavItems[3]]
+    ? [...sharedNavItems.slice(0, 3), ...availableFamilyItems, sharedNavItems[3]]
     : sharedNavItems;
-
-  async function handleLogout() {
-    await logout();
-    navigate("/login");
-  }
 
   return (
     <header className={`navbar ${isHome ? "navbar-home" : "navbar-inner"}`}>
@@ -57,12 +51,6 @@ export default function Navbar() {
         <span className="avatar" aria-label={user?.name ? `Logged in as ${user.name}` : "User"}>
           {user?.name?.[0]?.toUpperCase() || "U"}
         </span>
-        {isHome && (
-          <button className="btn ghost nav-logout" onClick={handleLogout} type="button">
-            <LogOut size={16} aria-hidden="true" />
-            <span>Logout</span>
-          </button>
-        )}
       </div>
     </header>
   );

@@ -16,6 +16,11 @@ import "./index.css";
 // Apply saved accessibility settings (larger text, contrast, motion) on load
 initAccessibility();
 
+// Apply the saved colour theme before React renders to reduce visual flashing.
+const savedTheme = localStorage.getItem("fet_theme") || "system";
+const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
+document.documentElement.classList.toggle("light", savedTheme === "light" || (savedTheme === "system" && prefersLight));
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>

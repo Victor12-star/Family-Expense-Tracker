@@ -1613,11 +1613,6 @@ button:disabled {
   font-size: 13px;
 }
 
-.nav-logout {
-  min-height: 36px;
-  padding: 7px 11px;
-}
-
 .view-toggle {
   background: var(--panel-strong);
   border-color: var(--border);
@@ -2177,10 +2172,6 @@ button:disabled {
 
   .navbar-home .view-btn {
     flex: 1;
-  }
-
-  .nav-logout span {
-    display: none;
   }
 
   .dashboard-hero {
@@ -3180,5 +3171,251 @@ button:disabled {
   .dashboard-brand-mark {
     width: 58px;
     height: 58px;
+  }
+}
+
+/* ============ SETTINGS HUB ============ */
+.settings-head p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.settings-notice {
+  margin: 14px 0;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.settings-nav,
+.settings-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.settings-nav {
+  position: sticky;
+  top: 84px;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.settings-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-nav button:hover,
+.settings-nav button.active {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.settings-nav button.active {
+  color: var(--accent);
+}
+
+.settings-content {
+  min-width: 0;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.settings-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-panel-head > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.settings-panel-head h2 {
+  font-size: 20px;
+}
+
+.settings-panel-head p,
+.account-summary span,
+.setting-action-row span,
+.settings-link-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.settings-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--accent-soft);
+}
+
+.settings-info svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.settings-info p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.setting-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.setting-action-row .field {
+  flex: 1;
+}
+
+.status-pill {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+}
+
+.settings-logout {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: var(--danger);
+}
+
+.settings-logout:hover {
+  filter: brightness(.94);
+}
+
+.settings-link-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  color: var(--text);
+  background: var(--panel-strong);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-link-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform: translateY(-1px);
+}
+
+.settings-link-card > svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.legal-modal {
+  max-width: 620px;
+}
+
+.legal-copy {
+  display: grid;
+  gap: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.legal-modal > .btn {
+  justify-self: end;
+}
+
+@media (max-width: 760px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .settings-nav {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    padding: 8px;
+    scrollbar-width: thin;
+  }
+
+  .settings-nav button {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .settings-panel {
+    padding: 18px;
+  }
+
+  .setting-action-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setting-action-row .btn,
+  .settings-logout {
+    width: 100%;
+    justify-content: center;
   }
 }
