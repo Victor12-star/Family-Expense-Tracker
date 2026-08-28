@@ -12,10 +12,11 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { api } from "../api/client.js";
 import { todayISO } from "../utils/format.js";
+import { playReminderChime } from "../utils/reminderAudio.js";
 
 const SOUND_KEY = "fet_reminder_sound";
 const initialForm = () => ({
@@ -38,25 +39,6 @@ function parseTimeParts(value = "12:00:00") {
   return { hour, minute, second };
 }
 
-function playSoftChime(type = "soft") {
-  if (type === "none") return;
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) return;
-  const context = new AudioContext();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.type = type === "digital" ? "square" : "sine";
-  oscillator.frequency.value = type === "bell" ? 740 : type === "digital" ? 520 : 620;
-  gain.gain.setValueAtTime(0.0001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.03);
-  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.7);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.75);
-  oscillator.addEventListener("ended", () => context.close());
-}
-
 export default function Calendar() {
   const { family, view } = useFamily();
   const [reminders, setReminders] = useState([]);
@@ -67,7 +49,6 @@ export default function Calendar() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
-  const notifiedRef = useRef(new Set());
 
   async function load() {
     if (view === "family" && !family) {
@@ -83,28 +64,6 @@ export default function Calendar() {
   useEffect(() => {
     load().catch(() => setReminders([]));
   }, [family?.id, view]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // In-app reminder alert. This is intentionally truthful: it works while the app
-  // is open. Closed-app push delivery will be added with the Service Worker phase.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      const now = new Date();
-      const today = ymd(now);
-      const current = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      reminders.forEach((reminder) => {
-        const reminderTime = (reminder.time || "").slice(0, 5);
-        const key = `${reminder.id}:${today}:${current}`;
-        if ((reminder.date || "").slice(0, 10) === today && reminderTime === current && !notifiedRef.current.has(key)) {
-          notifiedRef.current.add(key);
-          playSoftChime(sound);
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(reminder.title, { body: `Reminder at ${reminder.time || "now"}` });
-          }
-        }
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [reminders, sound]);
 
   async function submit(e) {
     e.preventDefault();
@@ -134,6 +93,7 @@ export default function Calendar() {
       setForm(initialForm());
       setShowForm(false);
       await load();
+      window.dispatchEvent(new Event("fet:reminders-changed"));
       setNotice("Reminder added successfully.");
       window.setTimeout(() => setNotice(""), 4000);
     } catch (error) {
@@ -147,12 +107,14 @@ export default function Calendar() {
     if (!window.confirm("Delete this reminder?")) return;
     await api.delete(`/reminders/${id}`);
     await load();
+    window.dispatchEvent(new Event("fet:reminders-changed"));
   }
 
   async function clearMine() {
     if (!reminders.length || !window.confirm("Clear all reminders you created in this workspace? This cannot be undone.")) return;
     await api.post("/reminders/clear", { view, familyId: view === "family" ? family?.id : null });
     await load();
+    window.dispatchEvent(new Event("fet:reminders-changed"));
   }
 
   async function requestNotifications() {
@@ -216,7 +178,11 @@ export default function Calendar() {
               <option value="none">None</option>
             </select>
           </label>
-          <button className="btn ghost" type="button" onClick={() => playSoftChime(sound)}>Preview</button>
+          <button className="btn ghost" type="button" onClick={async () => {
+            const played = await playReminderChime(sound);
+            setNotice(played ? "Sound is enabled." : "Your browser blocked sound. Click the page once and try Preview again.");
+            window.setTimeout(() => setNotice(""), 4000);
+          }}>Preview</button>
         </div>
         <button className="btn ghost" type="button" onClick={requestNotifications}>
           <Bell size={17} /> Browser notifications
