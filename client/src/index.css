@@ -2983,3 +2983,164 @@ button:disabled {
   box-shadow: 0 24px 60px rgba(15, 50, 91, 0.14);
   text-align: center;
 }
+
+/* =====================================================================
+   Brand identity and richer workspace surfaces
+   ===================================================================== */
+.auth-card .auth-logo {
+  display: none;
+}
+
+.auth-screen {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(14, 165, 233, 0.24), transparent 30%),
+    radial-gradient(circle at 84% 15%, rgba(249, 115, 22, 0.16), transparent 27%),
+    linear-gradient(145deg, #eef7ff 0%, #f7f7ff 46%, #fff7ed 100%);
+}
+
+.auth-card {
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(99, 102, 241, 0.16);
+  box-shadow: 0 28px 80px rgba(30, 64, 175, 0.14);
+}
+
+.auth-logo-img {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 12px 18px rgba(37, 99, 235, 0.18));
+}
+
+.nav-logo-img {
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 4px 7px rgba(37, 99, 235, 0.18));
+}
+
+.dashboard-brand-mark {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 10px 16px rgba(10, 35, 90, 0.24));
+}
+
+/* Each workspace has a recognizable but consistent color atmosphere. */
+.expenses-page,
+.calendar-page,
+.shopping-page,
+.chat-page,
+.family-page,
+.settings-page {
+  position: relative;
+}
+
+.expenses-page::before,
+.calendar-page::before,
+.shopping-page::before,
+.chat-page::before,
+.family-page::before,
+.settings-page::before {
+  content: "";
+  position: fixed;
+  inset: 64px 0 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.expenses-page::before {
+  background: linear-gradient(145deg, rgba(79, 70, 229, .08), transparent 48%, rgba(8, 145, 178, .07));
+}
+
+.calendar-page::before {
+  background: linear-gradient(145deg, rgba(14, 165, 233, .09), transparent 46%, rgba(249, 115, 22, .07));
+}
+
+.shopping-page::before {
+  background: linear-gradient(145deg, rgba(16, 185, 129, .09), transparent 48%, rgba(14, 165, 233, .07));
+}
+
+.chat-page::before {
+  background: linear-gradient(145deg, rgba(139, 92, 246, .09), transparent 48%, rgba(236, 72, 153, .06));
+}
+
+.family-page::before {
+  background: linear-gradient(145deg, rgba(249, 115, 22, .08), transparent 48%, rgba(59, 130, 246, .07));
+}
+
+.settings-page::before {
+  background: linear-gradient(145deg, rgba(71, 85, 105, .08), transparent 48%, rgba(14, 165, 233, .06));
+}
+
+.expenses-page .card,
+.calendar-page .card,
+.shopping-page .card,
+.chat-page .card,
+.family-page .card,
+.settings-page .card {
+  border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
+  box-shadow: 0 14px 36px rgba(30, 64, 175, 0.07);
+}
+
+.error-banner,
+.success-banner {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.error-banner {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.success-banner {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.page-notice {
+  position: sticky;
+  top: 78px;
+  z-index: 30;
+  align-self: flex-end;
+  box-shadow: 0 12px 26px rgba(5, 150, 105, .14);
+}
+
+/* Keep the primary drawer action visible on short laptop screens. */
+.drawer {
+  padding-bottom: 0;
+}
+
+.drawer-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 4px -24px 0;
+  padding: 14px 24px max(14px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 700px) {
+  .nav-name {
+    display: inline;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-brand-mark {
+    width: 58px;
+    height: 58px;
+  }
+}

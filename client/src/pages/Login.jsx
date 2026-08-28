@@ -19,7 +19,7 @@ export default function Login() {
     setError("");
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <img src="/logo.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
+        <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
         <h1>Family Expense Tracker</h1>
         <p className="tag">Sign in to your family</p>
 

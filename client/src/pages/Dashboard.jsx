@@ -71,6 +71,7 @@ export default function Dashboard() {
     <div className="page dashboard-page">
       <section className="dashboard-hero">
         <div className="dashboard-welcome">
+          <img src="/brand-mark.png" alt="" className="dashboard-brand-mark" />
           <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
           <h1>{greetingFor(now)}, {firstName}</h1>
           <p>Here is your financial overview for today.</p>

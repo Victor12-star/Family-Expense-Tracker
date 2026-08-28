@@ -20,7 +20,9 @@ export default function Register() {
     setError("");
     try {
       await register(name, email, password);
-      navigate("/");
+      // Registration returns a complete session, so enter the application
+      // immediately instead of sending the new user through login again.
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -32,6 +34,7 @@ export default function Register() {
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <div className="auth-logo">👨‍👩‍👧‍👦</div>
+        <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
         <h1>Create account</h1>
         <p className="tag">Join Family Expense Tracker</p>
 

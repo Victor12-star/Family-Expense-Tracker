@@ -65,6 +65,8 @@ export default function Calendar() {
   const [displayMonth, setDisplayMonth] = useState(() => new Date());
   const [sound, setSound] = useState(() => localStorage.getItem(SOUND_KEY) || "soft");
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
   const notifiedRef = useRef(new Set());
 
   async function load() {
@@ -106,7 +108,16 @@ export default function Calendar() {
 
   async function submit(e) {
     e.preventDefault();
-    if ((view === "family" && !family) || !form.title.trim() || saving) return;
+    if (saving) return;
+    if (view === "family" && !family) {
+      setFormError("Create or join a family before adding a family reminder.");
+      return;
+    }
+    if (!form.title.trim()) {
+      setFormError("Enter a reminder title.");
+      return;
+    }
+    setFormError("");
     setSaving(true);
     try {
       await api.post("/reminders", {
@@ -123,6 +134,10 @@ export default function Calendar() {
       setForm(initialForm());
       setShowForm(false);
       await load();
+      setNotice("Reminder added successfully.");
+      window.setTimeout(() => setNotice(""), 4000);
+    } catch (error) {
+      setFormError(error.response?.data?.message || "The reminder could not be added. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -182,10 +197,12 @@ export default function Calendar() {
           <h1>Calendar & reminders</h1>
           <p className="subtitle">Keep bills, appointments and important dates in view.</p>
         </div>
-        <button className="btn primary" type="button" onClick={() => setShowForm(true)}>
+        <button className="btn primary" type="button" onClick={() => { setFormError(""); setShowForm(true); }}>
           <Plus size={18} /> Add reminder
         </button>
       </div>
+
+      {notice && <div className="success-banner page-notice" role="status">{notice}</div>}
 
       <section className="reminder-toolbar card">
         <div className="reminder-sound-control">
@@ -286,6 +303,7 @@ export default function Calendar() {
               <button className="icon-btn" type="button" onClick={() => setShowForm(false)} aria-label="Close"><X size={20} /></button>
             </div>
             <form className="drawer-form" onSubmit={submit}>
+              {formError && <div className="error-banner" role="alert">{formError}</div>}
               <label className="field"><span>Title</span><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Electricity bill" required autoFocus /></label>
               <label className="field"><span>Date</span><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></label>
               <fieldset className="time-fieldset">

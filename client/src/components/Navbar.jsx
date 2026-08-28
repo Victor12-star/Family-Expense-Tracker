@@ -1,4 +1,4 @@
-import { Home, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
@@ -28,17 +28,10 @@ export default function Navbar() {
   return (
     <header className={`navbar ${isHome ? "navbar-home" : "navbar-inner"}`}>
       <div className="nav-start">
-        {isHome ? (
-          <Link to="/" className="nav-brand" aria-label="Family Expense Tracker home">
-            <img src="/logo.png" alt="" className="nav-logo-img" />
-            <span className="nav-name">Family Expense Tracker</span>
-          </Link>
-        ) : (
-          <Link to="/" className="nav-home-link">
-            <Home size={18} aria-hidden="true" />
-            <span>Home</span>
-          </Link>
-        )}
+        <Link to="/" className="nav-brand" aria-label="Family Expense Tracker home">
+          <img src="/brand-mark.png" alt="" className="nav-logo-img" />
+          <span className="nav-name">Family Expense Tracker</span>
+        </Link>
       </div>
 
       {isHome && <ViewToggle view={view} setView={setView} />}

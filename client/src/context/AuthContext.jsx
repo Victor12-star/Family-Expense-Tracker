@@ -2,9 +2,19 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { api, setTokens, clearTokens, getRefreshToken } from "../api/client.js";
 
 const AuthContext = createContext(null);
+const USER_KEY = "fet_user";
+
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+  } catch (_) {
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readStoredUser);
   const [loading, setLoading] = useState(true);
 
   // On load: try to restore the session using the stored refresh token
@@ -24,10 +34,12 @@ export function AuthProvider({ children }) {
         const { data } = await api.post("/auth/refresh", { refreshToken });
         setTokens(data);
         setUser(data.user);
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       } catch (_) {
         // Refresh failed — clear tokens and sign out
         clearTokens();
         setUser(null);
+        localStorage.removeItem(USER_KEY);
       } finally {
         setLoading(false);
       }
@@ -39,6 +51,7 @@ export function AuthProvider({ children }) {
     const res = await api.post("/auth/login", { email, password });
     setTokens(res.data);
     setUser(res.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
     return res.data;
   }, []);
 
@@ -46,6 +59,7 @@ export function AuthProvider({ children }) {
     const res = await api.post("/auth/register", { name, email, password });
     setTokens(res.data);
     setUser(res.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
     return res.data;
   }, []);
 
@@ -58,6 +72,7 @@ export function AuthProvider({ children }) {
     } finally {
       clearTokens();
       setUser(null);
+      localStorage.removeItem(USER_KEY);
     }
   }, []);
 
