@@ -30,7 +30,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="page">
+    <div className="page settings-page">
       <div className="page-head"><h2>Settings</h2></div>
 
       <div className="card">

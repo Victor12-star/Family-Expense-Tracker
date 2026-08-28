@@ -15,45 +15,6 @@ const EMOJIS = [
 
 const SHORTCUTS = { ":)": "😀", ":(": "😢", ":D": "😁", "<3": "❤️", ":P": "😛" };
 
-// ---- VoiceMessage component: reliable click-to-play ----
-function VoiceMessage({ src, duration }) {
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef(null);
-
-  function togglePlay() {
-    if (!audioRef.current) return;
-    if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
-    } else {
-      audioRef.current.play().catch(() => {});
-      setPlaying(true);
-    }
-  }
-
-  return (
-    <div className="voice-msg">
-      <button
-        type="button"
-        className={`voice-play-btn ${playing ? "playing" : ""}`}
-        onClick={togglePlay}
-        aria-label={playing ? "Pause voice message" : "Play voice message"}
-      >
-        {playing ? "⏸️" : "▶️"}
-      </button>
-      {/* Hidden audio element — we control playback with the button */}
-      <audio
-        ref={audioRef}
-        src={src}
-        onEnded={() => setPlaying(false)}
-        onPause={() => setPlaying(false)}
-        style={{ display: "none" }}
-      />
-      {duration > 0 && <span className="voice-duration">{duration}s</span>}
-    </div>
-  );
-}
-
 export default function Chat() {
   const { family, view } = useFamily();
   const { user } = useAuth();
@@ -61,9 +22,14 @@ export default function Chat() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showAttach, setShowAttach] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [lightbox, setLightbox] = useState(null);
 
-  const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -120,6 +86,7 @@ export default function Chat() {
     for (const [key, val] of Object.entries(SHORTCUTS)) msg = msg.split(key).join(val);
 
     setSending(true);
+    setNotice("");
     setText("");
     try {
       await api.post(`/chat/${family.id}`, { message: msg });
@@ -127,7 +94,7 @@ export default function Chat() {
     } catch (err) {
       console.error("Send failed:", err);
       setText(raw);
-      alert("Message failed to send. Is the server running?");
+      setNotice(err.response?.data?.message || "Message could not be sent. Check the connection and try again.");
     } finally {
       setSending(false);
     }
@@ -159,22 +126,63 @@ export default function Chat() {
     } catch (_) {}
   }
 
-  // Handle photo/file upload
-  function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file || !family) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        await api.post(`/chat/${family.id}`, { message: reader.result });
-        await loadMessages();
-      } catch (_) {}
-      e.target.value = "";
-    };
-    reader.readAsDataURL(file);
+  // Resize camera photos before sending. Phone photos are often too large for
+  // an API request, while a 1024px JPEG remains clear inside the chat.
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const maxSide = 1024;
+          let { width, height } = image;
+          const scale = Math.min(1, maxSide / Math.max(width, height));
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Image processing is unavailable");
+          context.drawImage(image, 0, 0, width, height);
+          const result = canvas.toDataURL("image/jpeg", 0.72);
+          URL.revokeObjectURL(objectUrl);
+          if (!result || result.length < 500) throw new Error("The picture could not be read");
+          resolve(result);
+        } catch (error) {
+          URL.revokeObjectURL(objectUrl);
+          reject(error);
+        }
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("This picture format could not be read"));
+      };
+      image.src = objectUrl;
+    });
   }
 
-  // ---- PRESS-AND-HOLD VOICE RECORDING ----
+  // Send a picture selected from the camera or gallery.
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file || !family) return;
+    setShowAttach(false);
+    setUploadingPhoto(true);
+    setNotice("");
+    try {
+      const image = await compressImage(file);
+      await api.post(`/chat/${family.id}`, { message: image });
+      await loadMessages();
+    } catch (err) {
+      console.error("Photo send failed:", err);
+      setNotice(err.response?.data?.message || "The picture could not be sent. Please try another picture.");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = "";
+    }
+  }
+
+  // ---- CLICK-TO-START / CLICK-TO-SEND VOICE RECORDING ----
   async function startRecording() {
     if (!family || recording) return;
     if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -184,7 +192,11 @@ export default function Chat() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const recorder = new MediaRecorder(stream);
+      const preferredType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
+        .find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = preferredType
+        ? new MediaRecorder(stream, { mimeType: preferredType })
+        : new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
       recordStartRef.current = Date.now();
@@ -195,7 +207,7 @@ export default function Chat() {
       recorder.onstop = async () => {
         const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
         const durationSec = Math.round(durationMs / 1000);
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
         if (blob.size > 0) {
@@ -208,7 +220,11 @@ export default function Chat() {
                 duration: durationSec,
               });
               await loadMessages();
-            } catch (_) {}
+              setNotice("Voice message sent.");
+            } catch (err) {
+              console.error("Voice send failed:", err);
+              setNotice(err.response?.data?.message || "The voice message could not be sent. Please try again.");
+            }
           };
           reader.readAsDataURL(blob);
         }
@@ -216,6 +232,7 @@ export default function Chat() {
 
       recorder.start();
       setRecording(true);
+      setNotice("Recording started. Click the microphone again to send.");
     } catch (err) {
       console.error("Mic error:", err);
       alert("Microphone access denied. Please allow the microphone.");
@@ -228,13 +245,19 @@ export default function Chat() {
         mediaRecorderRef.current.stop();
       } catch (_) {}
       setRecording(false);
+      setNotice("Sending voice message…");
     }
+  }
+
+  function toggleRecording() {
+    if (recording) stopRecording();
+    else startRecording();
   }
 
   // If individual view, hide chat
   if (view === "individual") {
     return (
-      <div className="page">
+      <div className="page chat-page">
         <div className="page-head">
           <h2>Family Chat</h2>
           <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
@@ -253,7 +276,7 @@ export default function Chat() {
   );
 
   return (
-    <div className="page">
+    <div className="page chat-page">
       <div className="page-head">
         <h2>Family Chat</h2>
         <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
@@ -310,9 +333,16 @@ export default function Chat() {
                       {isSystem ? "💰 Expense" : m.user?.name}
                     </div>
                     {isVoice ? (
-                      <VoiceMessage src={m.message} duration={m.duration} />
+                      <div className="voice-msg">
+                        <audio controls preload="metadata" src={m.message} className="chat-audio">
+                          Your browser does not support voice messages.
+                        </audio>
+                        {m.duration > 0 && <span className="voice-duration">{m.duration}s</span>}
+                      </div>
                     ) : isImage ? (
-                      <img src={m.message} alt="Shared in chat" className="chat-image" />
+                      <button type="button" className="chat-image-btn" onClick={() => setLightbox(m.message)}>
+                        <img src={m.message} alt="Shared in chat" className="chat-image" loading="lazy" />
+                      </button>
                     ) : (
                       <div>{m.message}</div>
                     )}
@@ -349,28 +379,33 @@ export default function Chat() {
             </div>
           )}
 
+          {notice && <div className="chat-notice" role="status">{notice}</div>}
+
           <form className="chat-input" onSubmit={send}>
             <button type="button" className="chat-tool-btn" onClick={() => setShowEmoji(!showEmoji)} title="Emoji">😀</button>
 
-            {/* Photo button */}
-            <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-            <button type="button" className="chat-tool-btn" onClick={() => photoInputRef.current?.click()} title="Photo">📷</button>
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFile} />
+            <input ref={galleryInputRef} type="file" accept="image/*" hidden onChange={handleFile} />
+            <button type="button" className="chat-tool-btn" onClick={() => setShowAttach((open) => !open)} title="Add picture">📷</button>
+            {showAttach && (
+              <div className="attach-menu" role="menu" aria-label="Add a picture">
+                <button type="button" onClick={() => cameraInputRef.current?.click()}>📸 Take picture</button>
+                <button type="button" onClick={() => galleryInputRef.current?.click()}>🖼️ Choose picture</button>
+              </div>
+            )}
 
-            {/* Press-and-hold voice button */}
+            {/* One click starts recording; the next click stops and sends it. */}
             <button
               type="button"
               className={`chat-tool-btn voice-btn ${recording ? "recording" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); startRecording(); }}
-              onPointerUp={() => stopRecording()}
-              onPointerLeave={() => stopRecording()}
-              onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-              onTouchEnd={() => stopRecording()}
-              title={recording ? "Release to send" : "Hold to record"}
-              aria-label="Hold to record voice"
+              onClick={toggleRecording}
+              title={recording ? "Stop and send recording" : "Start voice recording"}
+              aria-label={recording ? "Stop and send voice recording" : "Start voice recording"}
             >
               {recording ? "⏹️" : "🎙️"}
             </button>
-            {recording && <span className="recording-indicator">● Recording… release to send</span>}
+            {recording && <span className="recording-indicator">● Recording…</span>}
+            {uploadingPhoto && <span className="recording-indicator">Sending picture…</span>}
 
             <label className="sr-only" htmlFor="chat-text">Message</label>
             <input id="chat-text" placeholder="Type a message…" value={text} onChange={(e) => setText(e.target.value)} disabled={sending} />
@@ -378,6 +413,13 @@ export default function Chat() {
           </form>
         </div>
       </div>
+
+      {lightbox && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label="Picture preview" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="Shared picture enlarged" className="lightbox-img" />
+          <button type="button" className="lightbox-close" onClick={() => setLightbox(null)} aria-label="Close picture">×</button>
+        </div>
+      )}
     </div>
   );
 }
