@@ -17,12 +17,11 @@ const familyNavItems = [
 
 export default function Navbar() {
   const { user } = useAuth();
-  const { family, view, setView } = useFamily();
+  const { view, setView } = useFamily();
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const availableFamilyItems = family ? familyNavItems : familyNavItems.filter(([to]) => to === "/family");
   const navItems = view === "family"
-    ? [...sharedNavItems.slice(0, 3), ...availableFamilyItems, sharedNavItems[3]]
+    ? [...sharedNavItems.slice(0, 3), ...familyNavItems, sharedNavItems[3]]
     : sharedNavItems;
 
   return (
