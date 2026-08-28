@@ -1,6 +1,5 @@
 import {
   AlarmClock,
-  CalendarDays,
   Plus,
   ReceiptText,
   ShoppingBasket,
@@ -33,12 +32,7 @@ export default function Dashboard() {
   const [showBudget, setShowBudget] = useState(false);
   const [budgetNotice, setBudgetNotice] = useState("");
   const [savingBudget, setSavingBudget] = useState(false);
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const now = new Date();
 
   useEffect(() => {
     if (view === "family" && !family) {
@@ -118,40 +112,18 @@ export default function Dashboard() {
   const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const todayReminders = reminders.filter((reminder) => (reminder.date || "").slice(0, 10) === localToday);
 
-  const timeStr = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
   const firstName = user?.name?.trim()?.split(/\s+/)[0] || "there";
 
   return (
     <div className="page dashboard-page">
       <section className="dashboard-hero">
         <div className="dashboard-welcome">
-          <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
           <h1>{greetingFor(now)}, {firstName}</h1>
-          <p>Here is your financial overview for today.</p>
         </div>
         <Link to="/expenses" className="btn primary hero-add">
           <Plus size={18} aria-hidden="true" />
           Add expense
         </Link>
-      </section>
-
-      <section className="datetime-card compact" aria-label="Current date and time">
-        <div className="dt-left">
-          <CalendarDays size={22} aria-hidden="true" />
-          <div>
-            <strong>{now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</strong>
-            <span>{now.getFullYear()}</span>
-          </div>
-        </div>
-        <div className="dt-right">
-          <span className="dt-time">{timeStr}</span>
-          <span className="dt-live">Live</span>
-        </div>
       </section>
 
       <section className="summary" aria-label="Financial summary">

@@ -338,106 +338,6 @@ body {
   font-size: 14px;
 }
 
-/* Modern date & time banner */
-.datetime-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(129, 140, 248, 0.12)),
-    var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px 22px;
-  box-shadow: var(--shadow);
-  position: relative;
-  overflow: hidden;
-}
-
-.datetime-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-}
-
-.dt-left {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.dt-weekday {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--accent);
-}
-
-.dt-day {
-  font-size: 48px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--text);
-}
-
-.dt-month {
-  font-size: 15px;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.dt-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.dt-time {
-  font-size: 34px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.dt-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--success);
-}
-
-.dt-live::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.3;
-  }
-}
-
 /* Cards */
 .card {
   background: var(--panel);
@@ -1162,10 +1062,6 @@ html.a11y-large .stat-value {
   font-size: 30px;
 }
 
-html.a11y-large .dt-time {
-  font-size: 38px;
-}
-
 /* High contrast */
 html.a11y-contrast {
   --text: #ffffff;
@@ -1806,7 +1702,7 @@ button:disabled {
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   padding: clamp(24px, 4vw, 38px);
@@ -1835,66 +1731,105 @@ button:disabled {
   z-index: 1;
 }
 
-.dashboard-welcome .eyebrow,
-.dashboard-welcome h1,
-.dashboard-welcome p {
+.dashboard-welcome h1 {
   color: #fff;
 }
 
-.dashboard-welcome .eyebrow {
-  opacity: .8;
+/* Persistent in-app reminder alarm. It stays visible and repeats until stopped. */
+.reminder-alarm {
+  position: fixed;
+  left: 50%;
+  top: 88px;
+  z-index: 1200;
+  width: min(620px, calc(100% - 28px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid #fbbf24;
+  border-radius: 20px;
+  background: #fffbeb;
+  color: #78350f;
+  box-shadow: 0 24px 70px rgba(120, 53, 15, 0.26);
 }
 
-.dashboard-welcome p {
-  margin-top: 8px;
-  opacity: .82;
+.reminder-alarm-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 15px;
+  background: #f59e0b;
+  color: #fff;
+  animation: alarm-ring 0.8s ease-in-out infinite;
+}
+
+.reminder-alarm-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.reminder-alarm-copy span,
+.reminder-alarm-copy small {
+  font-size: 12px;
+}
+
+.reminder-alarm-copy span {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.reminder-alarm-copy strong {
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alarm-stop {
+  flex: 0 0 auto;
+  background: #b91c1c;
+  color: #fff;
+  border-color: #b91c1c;
+}
+
+@keyframes alarm-ring {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-7deg); }
+  75% { transform: rotate(7deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-alarm-icon {
+    animation: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .reminder-alarm {
+    top: 74px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .reminder-alarm-copy {
+    width: calc(100% - 64px);
+  }
+
+  .alarm-stop {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .hero-add {
   background: rgba(255,255,255,.96) !important;
   color: #27328f !important;
   white-space: nowrap;
-}
-
-.datetime-card.compact {
-  min-height: 90px;
-  background: var(--panel);
-  padding: 18px 22px;
-  box-shadow: var(--shadow);
-}
-
-.datetime-card.compact::before {
-  display: none;
-}
-
-.datetime-card.compact .dt-left {
-  align-items: center;
-  gap: 12px;
-  color: var(--accent);
-}
-
-.datetime-card.compact .dt-left div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.datetime-card.compact .dt-left strong {
-  color: var(--text);
-  font-size: 16px;
-}
-
-.datetime-card.compact .dt-left span {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.datetime-card.compact .dt-time {
-  font-size: clamp(24px, 3.2vw, 31px);
-}
-
-.dt-live {
-  text-transform: uppercase;
 }
 
 .summary {
@@ -2350,14 +2285,6 @@ button:disabled {
   .app-main {
     padding-left: 12px;
     padding-right: 12px;
-  }
-
-  .datetime-card.compact {
-    align-items: flex-start;
-  }
-
-  .datetime-card.compact .dt-right {
-    align-items: flex-start;
   }
 
   .dashboard-hero,

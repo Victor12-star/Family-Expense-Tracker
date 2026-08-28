@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AlarmClock, Square } from "lucide-react";
 import { api } from "../api/client.js";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { playReminderChime, unlockReminderAudio } from "../utils/reminderAudio.js";
@@ -16,7 +17,14 @@ function triggerTime(reminder) {
 export default function ReminderAlarm() {
   const { family, view } = useFamily();
   const [reminders, setReminders] = useState([]);
+  const [activeReminder, setActiveReminder] = useState(null);
   const firedRef = useRef(new Set());
+  const activeReminderRef = useRef(null);
+
+  function stopAlarm() {
+    activeReminderRef.current = null;
+    setActiveReminder(null);
+  }
 
   useEffect(() => {
     let active = true;
@@ -61,6 +69,23 @@ export default function ReminderAlarm() {
   }, []);
 
   useEffect(() => {
+    if (!activeReminder) return undefined;
+    let active = true;
+    const sound = activeReminder.sound || localStorage.getItem(SOUND_KEY) || "soft";
+
+    async function ring() {
+      if (active) await playReminderChime(sound);
+    }
+
+    ring();
+    const ringTimer = window.setInterval(ring, 3_500);
+    return () => {
+      active = false;
+      window.clearInterval(ringTimer);
+    };
+  }, [activeReminder]);
+
+  useEffect(() => {
     const timer = window.setInterval(async () => {
       const now = Date.now();
       for (const reminder of reminders) {
@@ -69,8 +94,10 @@ export default function ReminderAlarm() {
         const key = `${reminder.id}:${trigger}`;
         // A one-minute grace period handles background-tab timer throttling.
         if (now >= trigger && now - trigger <= 60_000 && !firedRef.current.has(key)) {
+          if (activeReminderRef.current) continue;
           firedRef.current.add(key);
-          await playReminderChime(reminder.sound || localStorage.getItem(SOUND_KEY) || "soft");
+          activeReminderRef.current = reminder;
+          setActiveReminder(reminder);
           if ("Notification" in window && Notification.permission === "granted") {
             new Notification(reminder.title, { body: `Reminder at ${reminder.time || "now"}` });
           }
@@ -80,5 +107,19 @@ export default function ReminderAlarm() {
     return () => window.clearInterval(timer);
   }, [reminders]);
 
-  return null;
+  if (!activeReminder) return null;
+
+  return (
+    <div className="reminder-alarm" role="alertdialog" aria-labelledby="reminder-alarm-title">
+      <div className="reminder-alarm-icon" aria-hidden="true"><AlarmClock size={28} /></div>
+      <div className="reminder-alarm-copy">
+        <span>Reminder</span>
+        <strong id="reminder-alarm-title">{activeReminder.title}</strong>
+        <small>{activeReminder.time ? `Scheduled for ${activeReminder.time.slice(0, 5)}` : "Scheduled for now"}</small>
+      </div>
+      <button type="button" className="btn alarm-stop" onClick={stopAlarm} autoFocus>
+        <Square size={16} fill="currentColor" aria-hidden="true" /> Stop alarm
+      </button>
+    </div>
+  );
 }
