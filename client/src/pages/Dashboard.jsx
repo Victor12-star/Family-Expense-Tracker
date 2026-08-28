@@ -35,20 +35,30 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!family) {
+    if (view === "family" && !family) {
       setExpenses([]);
       setReminders([]);
       return;
     }
 
     Promise.allSettled([
-      api.get("/expenses", { params: { familyId: family.id, view: apiView(view) } }),
-      api.get(`/reminders/${family.id}`),
+      api.get("/expenses", {
+        params: {
+          familyId: view === "family" ? family?.id : undefined,
+          view: apiView(view),
+        },
+      }),
+      api.get("/reminders", {
+        params: {
+          familyId: view === "family" ? family?.id : undefined,
+          view,
+        },
+      }),
     ]).then(([expenseResult, reminderResult]) => {
       if (expenseResult.status === "fulfilled") setExpenses(expenseResult.value.data);
       if (reminderResult.status === "fulfilled") setReminders(reminderResult.value.data);
     });
-  }, [family, view]);
+  }, [family?.id, view]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((expense) => (expense.date || "").startsWith(currentMonth())),

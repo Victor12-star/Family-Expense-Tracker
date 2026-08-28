@@ -36,12 +36,15 @@ export default function Expenses() {
   const [submitting, setSubmitting] = useState(false);
 
   async function load() {
-    if (!family) {
+    if (view === "family" && !family) {
       setExpenses([]);
       return;
     }
     const res = await api.get("/expenses", {
-      params: { familyId: family.id, view: apiView(view) },
+      params: {
+        familyId: view === "family" ? family?.id : undefined,
+        view: apiView(view),
+      },
     });
     setExpenses(res.data);
   }
@@ -52,7 +55,7 @@ export default function Expenses() {
 
   async function submit(e) {
     e.preventDefault();
-    if (!family || submitting) return;
+    if ((view === "family" && !family) || submitting) return;
     setSubmitting(true);
     try {
       await api.post("/expenses", {

@@ -4,13 +4,16 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 
-const navItems = [
+const sharedNavItems = [
   ["/expenses", "Expenses"],
   ["/calendar", "Calendar"],
   ["/shopping", "Shopping"],
+  ["/settings", "Settings"],
+];
+
+const familyNavItems = [
   ["/chat", "Chat"],
   ["/family", "Family"],
-  ["/settings", "Settings"],
 ];
 
 export default function Navbar() {
@@ -19,6 +22,9 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const navItems = view === "family"
+    ? [...sharedNavItems.slice(0, 3), ...familyNavItems, sharedNavItems[3]]
+    : sharedNavItems;
 
   async function handleLogout() {
     await logout();

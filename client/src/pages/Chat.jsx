@@ -254,8 +254,9 @@ export default function Chat() {
     else startRecording();
   }
 
-  // If individual view, hide chat
-  if (view === "individual") {
+  // Chat belongs only to the shared family workspace. Single mode must never
+  // expose family messages or member information.
+  if (view === "single") {
     return (
       <div className="page chat-page">
         <div className="page-head">
