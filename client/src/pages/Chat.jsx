@@ -1,8 +1,8 @@
 // =====================================================================
-// Chat page — messaging with sidebar, emoji, camera, press-hold voice
+// Chat page — messaging with sidebar, emoji, gallery pictures and voice
 // Uses REST for reliable sending + display.
 // =====================================================================
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -23,19 +23,19 @@ export default function Chat() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showAttach, setShowAttach] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [recording, setRecording] = useState(false);
   const [notice, setNotice] = useState("");
   const [lightbox, setLightbox] = useState(null);
 
-  const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const recordStartRef = useRef(null);
   const bottomRef = useRef(null);
+  const chatWindowRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const USER_COLORS = ["#38bdf8", "#818cf8", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
 
@@ -62,7 +62,19 @@ export default function Chat() {
     if (!family) return;
     try {
       const r = await api.get(`/chat/${family.id}`);
-      setMessages(r.data);
+      const nextMessages = Array.isArray(r.data) ? r.data : [];
+      const windowElement = chatWindowRef.current;
+      const wasNearBottom = !windowElement
+        || windowElement.scrollHeight - windowElement.scrollTop - windowElement.clientHeight < 120;
+
+      setMessages((currentMessages) => {
+        const signature = (items) => items.map((item) =>
+          `${item.id}:${item.updatedAt || item.createdAt}:${item.deletedAt || ""}:${item.message?.length || 0}`
+        ).join("|");
+        if (signature(currentMessages) === signature(nextMessages)) return currentMessages;
+        shouldAutoScrollRef.current = shouldAutoScrollRef.current || wasNearBottom || currentMessages.length === 0;
+        return nextMessages;
+      });
     } catch (_) {}
   }
 
@@ -74,9 +86,12 @@ export default function Chat() {
     return () => clearInterval(interval);
   }, [family]);
 
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Keep the reader's chosen scroll position. Move to the latest message only
+  // on first load, after sending, or when the reader was already near the end.
+  useLayoutEffect(() => {
+    if (!shouldAutoScrollRef.current) return;
+    bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    shouldAutoScrollRef.current = false;
   }, [messages]);
 
   // Send text
@@ -96,6 +111,7 @@ export default function Chat() {
     setText("");
     try {
       await api.post(`/chat/${family.id}`, { message: msg });
+      shouldAutoScrollRef.current = true;
       await loadMessages();
     } catch (err) {
       console.error("Send failed:", err);
@@ -136,6 +152,11 @@ export default function Chat() {
   // an API request, while a 1024px JPEG remains clear inside the chat.
   function compressImage(file) {
     return new Promise((resolve, reject) => {
+      const supportedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (file.type && !supportedTypes.includes(file.type.toLowerCase())) {
+        reject(new Error("This gallery format is not supported. Choose a JPEG, PNG, WebP or GIF picture."));
+        return;
+      }
       const objectUrl = URL.createObjectURL(file);
       const image = new Image();
       image.onload = () => {
@@ -172,16 +193,16 @@ export default function Chat() {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file || !family) return;
-    setShowAttach(false);
     setUploadingPhoto(true);
     setNotice("");
     try {
       const image = await compressImage(file);
       await api.post(`/chat/${family.id}`, { message: image });
+      shouldAutoScrollRef.current = true;
       await loadMessages();
     } catch (err) {
       console.error("Photo send failed:", err);
-      setNotice(err.response?.data?.message || "The picture could not be sent. Please try another picture.");
+      setNotice(err.response?.data?.message || err.message || "The picture could not be sent. Please try another picture.");
     } finally {
       setUploadingPhoto(false);
       e.target.value = "";
@@ -229,6 +250,7 @@ export default function Chat() {
                 isVoice: true,
                 duration: durationSec,
               });
+              shouldAutoScrollRef.current = true;
               await loadMessages();
               setNotice("Voice message sent.");
             } catch (err) {
@@ -364,7 +386,7 @@ export default function Chat() {
         </aside>
 
         <div className="chat-card">
-          <div className="chat-window" role="log" aria-live="polite" aria-label="Chat messages">
+          <div ref={chatWindowRef} className="chat-window" role="log" aria-live="polite" aria-label="Chat messages">
             {conversationMessages.map((m, i) => {
               const isMe = m.user?.name === user?.name;
               const isSystem = isSystemMessage(m);
@@ -435,15 +457,22 @@ export default function Chat() {
           <form className="chat-input" onSubmit={send}>
             <button type="button" className="chat-tool-btn" onClick={() => setShowEmoji(!showEmoji)} title="Emoji">😀</button>
 
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFile} />
-            <input ref={galleryInputRef} type="file" accept="image/*" hidden onChange={handleFile} />
-            <button type="button" className="chat-tool-btn" onClick={() => setShowAttach((open) => !open)} title="Add picture">📷</button>
-            {showAttach && (
-              <div className="attach-menu" role="menu" aria-label="Add a picture">
-                <button type="button" onClick={() => cameraInputRef.current?.click()}>📸 Take picture</button>
-                <button type="button" onClick={() => galleryInputRef.current?.click()}>🖼️ Choose picture</button>
-              </div>
-            )}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              hidden
+              onChange={handleFile}
+            />
+            <button
+              type="button"
+              className="chat-tool-btn"
+              onClick={() => galleryInputRef.current?.click()}
+              title="Choose a picture from gallery"
+              aria-label="Choose a picture from gallery"
+            >
+              🖼️
+            </button>
 
             {/* One click starts recording; the next click stops and sends it. */}
             <button

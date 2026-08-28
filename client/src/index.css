@@ -1457,37 +1457,9 @@ html.a11y-motion *::after {
   font-weight: 600;
 }
 
-/* Reliable camera/gallery menu and visible chat operation feedback. */
+/* Visible feedback for chat operations. */
 .chat-input {
   position: relative;
-}
-
-.attach-menu {
-  position: absolute;
-  left: 52px;
-  bottom: calc(100% + 10px);
-  z-index: 20;
-  display: grid;
-  min-width: 190px;
-  padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
-}
-
-.attach-menu button {
-  padding: 11px 12px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: #172033;
-  text-align: left;
-  cursor: pointer;
-}
-
-.attach-menu button:hover {
-  background: #eef2ff;
 }
 
 .chat-notice {
