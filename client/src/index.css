@@ -1473,6 +1473,23 @@ html.a11y-motion *::after {
   font-size: 13px;
 }
 
+.chat-setup-state {
+  min-height: 360px;
+  justify-content: center;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(99, 102, 241, 0.13), transparent 38%),
+    #fff;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 .chat-image-btn {
   display: block;
   padding: 0;
@@ -1772,6 +1789,19 @@ button:disabled {
   color: var(--accent);
   font-weight: 700;
   text-decoration: none;
+}
+
+.stat-action {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.stat-action:hover {
+  text-decoration: underline;
 }
 
 /* Dashboard */
