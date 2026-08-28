@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -67,6 +68,8 @@ export default function Shopping() {
   const [itemForm, setItemForm] = useState(initialItem);
   const [actualTotal, setActualTotal] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
+  const [budgetNotice, setBudgetNotice] = useState("");
+  const [savingBudget, setSavingBudget] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const scopeParams = useMemo(() => ({
@@ -138,16 +141,33 @@ export default function Shopping() {
 
   async function saveBudget(e) {
     e.preventDefault();
-    if (!budgetAmount || Number(budgetAmount) <= 0) return;
-    await api.put("/budgets", {
-      view,
-      familyId: view === "family" ? family?.id : null,
-      month: currentMonth(),
-      amount: Number(budgetAmount),
-      currency,
-    });
-    setShowBudget(false);
-    await loadAll();
+    const amount = Number(budgetAmount);
+    if (!Number.isFinite(amount) || amount <= 0 || savingBudget) return;
+    if (view === "family" && !family?.id) {
+      setBudgetNotice("Create or join a family before setting a Family budget, or switch to Single mode.");
+      return;
+    }
+
+    setSavingBudget(true);
+    setBudgetNotice("");
+    try {
+      await api.put("/budgets", {
+        view,
+        familyId: view === "family" ? family.id : null,
+        month: currentMonth(),
+        amount,
+        currency,
+      });
+      setShowBudget(false);
+      await loadAll();
+    } catch (error) {
+      const details = error.response?.data?.details;
+      setBudgetNotice(Array.isArray(details) && details[0]?.message
+        ? details[0].message
+        : error.response?.data?.message || "The budget could not be saved. Please try again.");
+    } finally {
+      setSavingBudget(false);
+    }
   }
 
   async function completeTrip(e) {
@@ -211,7 +231,7 @@ export default function Shopping() {
       </div>
 
       <section className="shopping-summary-grid">
-        <article className="mini-stat"><Wallet size={20} /><span>Monthly budget</span><strong>{budget?.budget ? money(budget.budget.amount, currency) : "Not set"}</strong><button type="button" onClick={() => setShowBudget(true)}>{budget?.budget ? "Edit budget" : "Set budget"}</button></article>
+        <article className="mini-stat"><Wallet size={20} /><span>Monthly budget</span><strong>{budget?.budget ? money(budget.budget.amount, currency) : "Not set"}</strong>{view === "family" && !family ? <Link to="/family">Create a family to set budget</Link> : <button type="button" onClick={() => { setBudgetNotice(""); setShowBudget(true); }}>{budget?.budget ? "Edit budget" : "Set budget"}</button>}</article>
         <article className="mini-stat"><CircleDollarSign size={20} /><span>Spent this month</span><strong>{money(budget?.spent || 0, currency)}</strong><small>{budget?.expenseCount || 0} expenses</small></article>
         <article className="mini-stat"><Wallet size={20} /><span>Remaining</span><strong>{budget?.remaining == null ? "—" : money(budget.remaining, currency)}</strong><small>{budget?.percentUsed == null ? "No budget set" : `${Math.round(budget.percentUsed)}% used`}</small></article>
         <article className="mini-stat accent-stat"><ShoppingBasket size={20} /><span>Current list estimate</span><strong>{money(summary.estimatedTotal || 0, currency)}</strong><small>{projectedRemaining == null ? `${summary.itemCount || 0} items` : `${money(projectedRemaining, currency)} projected remaining`}</small></article>
@@ -325,7 +345,7 @@ export default function Shopping() {
       )}
 
       {showBudget && (
-        <div className="modal-layer"><form className="modal-card" onSubmit={saveBudget}><div className="drawer-head"><div><span className="eyebrow">{new Date().toLocaleDateString([], { month: "long", year: "numeric" })}</span><h2>Monthly budget</h2></div><button className="icon-btn" type="button" onClick={() => setShowBudget(false)}><X size={20} /></button></div><label className="field"><span>Budget amount ({currency})</span><input type="number" min="0.01" step="0.01" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} required autoFocus /></label><div className="drawer-actions"><button className="btn ghost" type="button" onClick={() => setShowBudget(false)}>Cancel</button><button className="btn primary" type="submit">Save budget</button></div></form></div>
+        <div className="modal-layer"><form className="modal-card" onSubmit={saveBudget}><div className="drawer-head"><div><span className="eyebrow">{new Date().toLocaleDateString([], { month: "long", year: "numeric" })}</span><h2>Monthly budget</h2></div><button className="icon-btn" type="button" onClick={() => setShowBudget(false)}><X size={20} /></button></div><label className="field"><span>Budget amount ({currency})</span><input type="number" min="0.01" step="0.01" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} required autoFocus /></label>{budgetNotice && <p className="form-error" role="alert">{budgetNotice}</p>}<div className="drawer-actions"><button className="btn ghost" type="button" onClick={() => setShowBudget(false)}>Cancel</button><button className="btn primary" type="submit" disabled={savingBudget}>{savingBudget ? "Saving…" : "Save budget"}</button></div></form></div>
       )}
 
       {showComplete && (

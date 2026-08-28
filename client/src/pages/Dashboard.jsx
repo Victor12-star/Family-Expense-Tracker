@@ -137,9 +137,13 @@ export default function Dashboard() {
           <div className="stat-icon"><Wallet size={20} /></div>
           <span className="stat-label">Monthly budget</span>
           <output className="stat-value">{budget?.budget ? money(budget.budget.amount, currency) : "—"}</output>
-          <button type="button" className="stat-note stat-link stat-action" onClick={() => { setBudgetNotice(""); setShowBudget(true); }}>
-            {budget?.budget ? "Edit budget" : "Set a budget"}
-          </button>
+          {view === "family" && !family ? (
+            <Link className="stat-note stat-link" to="/family">Create a family to set a budget</Link>
+          ) : (
+            <button type="button" className="stat-note stat-link stat-action" onClick={() => { setBudgetNotice(""); setShowBudget(true); }}>
+              {budget?.budget ? "Edit budget" : "Set a budget"}
+            </button>
+          )}
         </article>
         <article className="stat">
           <div className="stat-icon"><AlarmClock size={20} /></div>
