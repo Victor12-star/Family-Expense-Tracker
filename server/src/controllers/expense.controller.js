@@ -15,6 +15,7 @@ export const addExpense = asyncHandler(async (req, res) => {
     userId: req.user.id,
     familyId: req.body.familyId,
     view: req.body.view,
+    shareWithChat: req.body.shareWithChat === true,
     data: {
       name: req.body.name,
       amount: req.body.amount,

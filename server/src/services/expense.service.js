@@ -9,7 +9,7 @@ async function postExpenseToChat({ userId, familyId, name, amount, currency, use
       data: {
         userId,
         familyId,
-        message: `${userName || "Someone"} added an expense: ${name} — ${Number(amount)} ${currency || ""}`.trim(),
+        message: `💸 ${userName || "Someone"} added an expense: ${name} — ${Number(amount)} ${currency || ""}`.trim(),
       },
     });
   } catch (_) {
@@ -34,7 +34,7 @@ export async function listExpenses({ userId, familyId, view }) {
   });
 }
 
-export async function createExpense({ userId, familyId, view, data }) {
+export async function createExpense({ userId, familyId, view, shareWithChat = false, data }) {
   const scope = await resolveScope({ userId, familyId, view });
   const expense = await prisma.expense.create({
     data: {
@@ -46,7 +46,7 @@ export async function createExpense({ userId, familyId, view, data }) {
     include: { user: { select: { name: true } } },
   });
 
-  if (scope.view === "family" && !expense.isPrivate) {
+  if (scope.view === "family" && !expense.isPrivate && shareWithChat) {
     await postExpenseToChat({
       userId,
       familyId: scope.familyId,

@@ -3,6 +3,7 @@
 // Uses REST for reliable sending + display.
 // =====================================================================
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
@@ -16,7 +17,7 @@ const EMOJIS = [
 const SHORTCUTS = { ":)": "😀", ":(": "😢", ":D": "😁", "<3": "❤️", ":P": "😛" };
 
 export default function Chat() {
-  const { family, view } = useFamily();
+  const { family, view, familyLoading, refreshFamilies } = useFamily();
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -81,7 +82,11 @@ export default function Chat() {
   async function send(e) {
     e.preventDefault();
     const raw = text.trim();
-    if (!raw || !family) return;
+    if (!raw) return;
+    if (!family) {
+      setNotice("Create or join a family before sending a family message.");
+      return;
+    }
     let msg = raw;
     for (const [key, val] of Object.entries(SHORTCUTS)) msg = msg.split(key).join(val);
 
@@ -184,7 +189,11 @@ export default function Chat() {
 
   // ---- CLICK-TO-START / CLICK-TO-SEND VOICE RECORDING ----
   async function startRecording() {
-    if (!family || recording) return;
+    if (recording) return;
+    if (!family) {
+      setNotice("Create or join a family before recording a family message.");
+      return;
+    }
     if (!navigator.mediaDevices || !window.MediaRecorder) {
       alert("Voice recording not supported in this browser.");
       return;
@@ -272,9 +281,40 @@ export default function Chat() {
     );
   }
 
+  if (familyLoading) {
+    return (
+      <div className="page chat-page">
+        <div className="card empty-state">
+          <h2>Loading family chat…</h2>
+          <p>Please wait while your family workspace is checked.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!family) {
+    return (
+      <div className="page chat-page">
+        <div className="page-head"><h1>Family Chat</h1></div>
+        <div className="card empty-state chat-setup-state">
+          <div className="empty-icon">💬</div>
+          <h2>Connect a family before messaging</h2>
+          <p>Family Chat needs a real family workspace so messages remain private between its members.</p>
+          <div className="empty-actions">
+            <Link className="btn primary" to="/family">Create or join a family</Link>
+            <button className="btn secondary" type="button" onClick={() => refreshFamilies()}>
+              Check again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const sortedMessages = [...messages].sort((a, b) =>
     (a.createdAt || "").localeCompare(b.createdAt || "")
   );
+  const sharedExpenses = sortedMessages.filter(isSystemMessage).slice(-5).reverse();
 
   return (
     <div className="page chat-page">
@@ -290,9 +330,9 @@ export default function Chat() {
           <div className="sidebar-head">
             <div className="sidebar-avatar"></div>
             <div>
-              <h3>{family?.name || "Family"}</h3>
+              <h3>{family.name}</h3>
               <span className="sidebar-status">
-                <i className="online-dot"></i> {family?.members?.length || 1} members
+                <i className="online-dot"></i> {family.members?.length || 0} members
               </span>
             </div>
           </div>
@@ -308,8 +348,16 @@ export default function Chat() {
               </div>
             ))}
           </div>
-          <div className="sidebar-note">
-            <p>💡 Tip: Add expenses and they'll appear here automatically.</p>
+          <div className="sidebar-note shared-expenses">
+            <h4>Shared expenses</h4>
+            {sharedExpenses.length > 0 ? sharedExpenses.map((expense) => (
+              <div className="shared-expense" key={expense.id}>
+                <span>{expense.message.replace(/^💸\s*/, "")}</span>
+                <small>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ""}</small>
+              </div>
+            )) : (
+              <p>Expenses appear here only when “Share in family chat” is selected.</p>
+            )}
           </div>
         </aside>
 

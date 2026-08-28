@@ -15,6 +15,7 @@ router.post(
     body("amount").isFloat({ gt: 0 }).withMessage("Valid amount required"),
     body("category").optional(),
     body("date").isISO8601().withMessage("Valid date required"),
+    body("shareWithChat").optional().isBoolean(),
   ]),
   addExpense
 );

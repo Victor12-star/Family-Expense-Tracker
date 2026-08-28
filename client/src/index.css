@@ -993,6 +993,31 @@ body {
   line-height: 1.5;
 }
 
+.shared-expenses h4 {
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.shared-expense {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.shared-expense:last-child {
+  border-bottom: 0;
+}
+
+.shared-expense span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.shared-expense small {
+  color: var(--muted);
+}
+
 .chat-card {
   position: relative;
 }
@@ -2182,6 +2207,10 @@ button:disabled {
   border: 1px solid var(--border);
   background: var(--panel-strong);
   border-radius: 14px;
+}
+
+.privacy-option.is-disabled {
+  opacity: 0.6;
 }
 
 .privacy-copy {

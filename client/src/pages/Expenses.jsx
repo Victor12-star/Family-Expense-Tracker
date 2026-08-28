@@ -22,6 +22,7 @@ const initialForm = () => ({
   category: "Food",
   date: todayISO(),
   isPrivate: false,
+  shareWithChat: true,
 });
 
 export default function Expenses() {
@@ -244,13 +245,33 @@ export default function Expenses() {
                 </select>
               </label>
               {view === "family" && (
-                <label className="privacy-option">
-                  <div className="privacy-copy">
-                    <LockKeyhole size={18} />
-                    <span><strong>Private expense</strong><small>Only you can see this expense.</small></span>
-                  </div>
-                  <input type="checkbox" className="toggle" checked={form.isPrivate} onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })} />
-                </label>
+                <>
+                  <label className="privacy-option">
+                    <div className="privacy-copy">
+                      <LockKeyhole size={18} />
+                      <span><strong>Private expense</strong><small>Only you can see this expense.</small></span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="toggle"
+                      checked={form.isPrivate}
+                      onChange={(e) => setForm({ ...form, isPrivate: e.target.checked, shareWithChat: e.target.checked ? false : form.shareWithChat })}
+                    />
+                  </label>
+                  <label className={`privacy-option ${form.isPrivate ? "is-disabled" : ""}`}>
+                    <div className="privacy-copy">
+                      <span aria-hidden="true">💬</span>
+                      <span><strong>Share in family chat</strong><small>Show this expense in the Family Chat sidebar.</small></span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="toggle"
+                      checked={form.shareWithChat}
+                      disabled={form.isPrivate}
+                      onChange={(e) => setForm({ ...form, shareWithChat: e.target.checked })}
+                    />
+                  </label>
+                </>
               )}
               <div className="drawer-actions">
                 <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>Cancel</button>
