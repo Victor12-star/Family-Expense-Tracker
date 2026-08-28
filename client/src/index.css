@@ -3176,8 +3176,9 @@ button:disabled {
 
 /* ============ SETTINGS HUB ============ */
 .settings-head p {
-  margin-top: 6px;
+  margin-top: 3px;
   color: var(--muted);
+  font-size: 13px;
 }
 
 .settings-notice {
@@ -3187,7 +3188,7 @@ button:disabled {
 .settings-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  gap: 20px;
+  gap: 18px;
   align-items: start;
   margin-top: 22px;
 }
@@ -3214,13 +3215,13 @@ button:disabled {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 11px 12px;
+  padding: 10px 11px;
   border: 0;
   border-radius: 11px;
   color: var(--muted);
   background: transparent;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -3242,15 +3243,16 @@ button:disabled {
 
 .settings-panel {
   display: grid;
-  gap: 18px;
-  padding: 24px;
+  gap: 0;
+  padding: 20px;
 }
 
 .settings-panel-head {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding-bottom: 17px;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-bottom: 2px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -3261,7 +3263,7 @@ button:disabled {
 }
 
 .settings-panel-head h2 {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .settings-panel-head p,
@@ -3279,6 +3281,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 14px;
+  padding: 18px 2px 2px;
 }
 
 .account-avatar {
@@ -3294,32 +3297,73 @@ button:disabled {
   font-weight: 800;
 }
 
-.settings-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 13px 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--muted);
-  background: var(--accent-soft);
-}
-
-.settings-info svg {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
-.settings-info p {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .setting-action-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+}
+
+.settings-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 64px;
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.settings-control-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+.settings-control-row > span:first-child {
+  min-width: 0;
+}
+
+.settings-control-row strong {
+  display: block;
+  font-size: 14px;
+}
+
+.settings-control-row small,
+.settings-byline {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.settings-control-row select {
+  width: min(230px, 48%);
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--panel-strong);
+  font: inherit;
+  font-size: 13px;
+}
+
+.settings-inline-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: min(330px, 55%);
+}
+
+.settings-inline-control select {
+  width: 190px;
+}
+
+.settings-status {
+  text-transform: capitalize;
 }
 
 .setting-action-row .field {
@@ -3332,7 +3376,6 @@ button:disabled {
 }
 
 .settings-logout {
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3349,19 +3392,24 @@ button:disabled {
   align-items: center;
   gap: 13px;
   width: 100%;
-  padding: 15px;
-  border: 1px solid var(--border);
-  border-radius: 13px;
+  padding: 14px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
   color: var(--text);
-  background: var(--panel-strong);
+  background: transparent;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .settings-link-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  transform: translateY(-1px);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+}
+
+.settings-link-card:last-child {
+  border-bottom: 0;
 }
 
 .settings-link-card > svg {
@@ -3405,7 +3453,7 @@ button:disabled {
   }
 
   .settings-panel {
-    padding: 18px;
+    padding: 16px;
   }
 
   .setting-action-row {
@@ -3417,5 +3465,26 @@ button:disabled {
   .settings-logout {
     width: 100%;
     justify-content: center;
+  }
+
+  .settings-control-row {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .settings-control-row select {
+    width: min(190px, 50%);
+  }
+
+  .settings-inline-control {
+    min-width: 0;
+    width: 52%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-inline-control select,
+  .settings-inline-control .btn {
+    width: 100%;
   }
 }

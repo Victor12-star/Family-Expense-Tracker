@@ -37,16 +37,16 @@ const sections = [
 
 const legalContent = {
   privacy: {
-    title: "Privacy overview",
-    body: <><p>The application stores account details, expenses, budgets, reminders, shopping information, family membership and family messages so its features can work.</p><p>Authentication and application data are handled by the backend and PostgreSQL database. The formal public Privacy Policy, retention schedule, processor list and account-data request process must be completed before public release.</p></>,
+    title: "Privacy",
+    body: <><p>Family Expense Tracker stores the account and financial information needed to provide its features, including expenses, budgets, reminders, shopping lists and family messages.</p><p>Your information is sent to the application server and stored in its database. Do not enter information you do not want shared with members of your family workspace.</p></>,
   },
   terms: {
-    title: "Terms of Service status",
-    body: <><p>The final Terms of Service have not been published because this is still a staging build.</p><p>Release is blocked until the terms accurately describe the finished service, user responsibilities, subscriptions, support and applicable Swedish and European Union requirements.</p></>,
+    title: "Terms of use",
+    body: <><p>This is a staging version of Family Expense Tracker for testing. Features may change and the service should not be treated as permanent storage.</p><p>Final public terms will be published before the application is released for general use.</p></>,
   },
   licenses: {
-    title: "Open-source licences",
-    body: <><p>This application uses open-source software including React, Vite, React Router, Axios, Lucide React, Recharts and Socket.IO Client.</p><p>These packages use their own licences, mainly MIT and similar permissive licences. A complete third-party notice generated from the final locked dependencies will be included before public release.</p></>,
+    title: "Open-source licenses",
+    body: <><p>Built with React, Vite, React Router, Axios, Lucide React, Recharts and Socket.IO Client.</p><p>These projects are distributed under their respective open-source licenses, primarily the MIT License.</p></>,
   },
 };
 
@@ -110,9 +110,8 @@ export default function Settings() {
   return (
     <div className="page settings-page">
       <div className="modern-head settings-head">
-        <span className="eyebrow">Account & application</span>
         <h1>Settings</h1>
-        <p>Manage the preferences and controls that are available in this release.</p>
+        <p>Manage your account and app preferences.</p>
       </div>
       {notice && <div className="success-banner settings-notice" role="status">{notice}</div>}
 
@@ -149,38 +148,34 @@ export default function Settings() {
   );
 }
 
-function PanelHead({ Icon, title, copy }) {
-  return <div className="settings-panel-head"><Icon size={22} /><div><h2>{title}</h2><p>{copy}</p></div></div>;
-}
-
-function InfoBox({ children }) {
-  return <div className="settings-info"><Info size={17} /><p>{children}</p></div>;
+function PanelHead({ Icon, title }) {
+  return <div className="settings-panel-head"><Icon size={20} /><h2>{title}</h2></div>;
 }
 
 function AccountPanel({ user }) {
-  return <div className="settings-panel"><PanelHead Icon={UserRound} title="Account" copy="Your current account identity." /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong><span>{user?.email || "No email available"}</span></div></div><InfoBox>Name and email editing will be added with verified-email protection. This staging version does not show unsaved editing controls.</InfoBox></div>;
+  return <div className="settings-panel"><PanelHead Icon={UserRound} title="Account" /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong><span>{user?.email || "No email available"}</span></div></div></div>;
 }
 
 function PreferencesPanel({ currency, changeCurrency, theme, handleThemeChange }) {
-  return <div className="settings-panel"><PanelHead Icon={SlidersHorizontal} title="Preferences" copy="Choose how values and colours appear." /><label className="field"><span>Currency</span><select value={currency} onChange={(event) => changeCurrency(event.target.value)}>{CURRENCY_CODES.map((code) => <option key={code} value={code}>{code} ({CURRENCIES[code]})</option>)}</select></label><label className="field"><span>Theme</span><select value={theme} onChange={handleThemeChange}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>;
+  return <div className="settings-panel"><PanelHead Icon={SlidersHorizontal} title="Preferences" /><label className="settings-control-row"><span><strong>Currency</strong><small>Used for amounts throughout the app</small></span><select value={currency} onChange={(event) => changeCurrency(event.target.value)}>{CURRENCY_CODES.map((code) => <option key={code} value={code}>{code} ({CURRENCIES[code]})</option>)}</select></label><label className="settings-control-row"><span><strong>Theme</strong><small>Choose your display appearance</small></span><select value={theme} onChange={handleThemeChange}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>;
 }
 
 function NotificationsPanel({ status, requestNotifications, sound, setSound, previewSound }) {
-  return <div className="settings-panel"><PanelHead Icon={Bell} title="Notifications" copy="Control browser alerts and reminder sounds." /><div className="setting-action-row"><div><strong>Browser notifications</strong><span>Status: {status}</span></div><button className="btn secondary" type="button" onClick={requestNotifications}>Manage permission</button></div><div className="setting-action-row"><label className="field"><span>Reminder sound</span><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select></label><button className="btn secondary" type="button" onClick={previewSound}>Preview</button></div><InfoBox>In-app alarms work while the application is open. Closed-app Web Push delivery is not included yet.</InfoBox></div>;
+  return <div className="settings-panel"><PanelHead Icon={Bell} title="Notifications" /><div className="settings-control-row"><span><strong>Browser notifications</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><span><strong>Reminder sound</strong><small>Plays when an in-app reminder is due</small></span><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>Preview</button></div></div></div>;
 }
 
 function SecurityPanel({ user, handleLogout }) {
-  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title="Security" copy="Review and end your current session." /><div className="setting-action-row"><div><strong>Current session</strong><span>Signed in as {user?.email}</span></div><span className="status-pill"><CheckCircle2 size={15} /> Active</span></div><button className="btn danger settings-logout" type="button" onClick={handleLogout}><LogOut size={18} /> Log out</button><InfoBox>Password changes, verified email and device-session management require additional secured backend endpoints and will be completed before public release.</InfoBox></div>;
+  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title="Security" /><div className="settings-control-row"><span><strong>Current session</strong><small>{user?.email}</small></span><span className="status-pill"><CheckCircle2 size={14} /> Active</span></div><div className="settings-control-row"><span><strong>Log out</strong><small>End this session on this device</small></span><button className="btn danger settings-logout" type="button" onClick={handleLogout}><LogOut size={16} /> Log out</button></div></div>;
 }
 
 function PrivacyPanel({ setLegalPanel }) {
-  return <div className="settings-panel"><PanelHead Icon={FileText} title="Privacy & Data" copy="Understand the current data and legal status." /><button className="settings-link-card" type="button" onClick={() => setLegalPanel("privacy")}><FileText size={20} /><span><strong>Privacy overview</strong><small>See what information the application currently uses.</small></span></button><button className="settings-link-card" type="button" onClick={() => setLegalPanel("terms")}><Scale size={20} /><span><strong>Terms of Service</strong><small>Review the staging and public-release status.</small></span></button><InfoBox>Data export and account deletion are not shown as buttons until secure server-side workflows are implemented.</InfoBox></div>;
+  return <div className="settings-panel"><PanelHead Icon={FileText} title="Privacy & Data" /><button className="settings-link-card" type="button" onClick={() => setLegalPanel("privacy")}><FileText size={18} /><span><strong>Privacy</strong><small>How your information is used</small></span></button><button className="settings-link-card" type="button" onClick={() => setLegalPanel("terms")}><Scale size={18} /><span><strong>Terms of use</strong><small>Rules for using this staging app</small></span></button></div>;
 }
 
 function AccessibilityPanel({ a11y, handleA11yChange }) {
-  return <div className="settings-panel"><PanelHead Icon={Accessibility} title="Accessibility" copy="Apply display preferences throughout the application." />{[["largeText", "Larger text"], ["highContrast", "High contrast"], ["reduceMotion", "Reduce motion"]].map(([name, label]) => <label className="toggle-row" key={name}><span>{label}</span><input type="checkbox" className="toggle" checked={a11y[name]} onChange={(event) => handleA11yChange(name, event.target.checked)} /></label>)}</div>;
+  return <div className="settings-panel"><PanelHead Icon={Accessibility} title="Accessibility" />{[["largeText", "Larger text"], ["highContrast", "High contrast"], ["reduceMotion", "Reduce motion"]].map(([name, label]) => <label className="settings-control-row" key={name}><strong>{label}</strong><input type="checkbox" className="toggle" checked={a11y[name]} onChange={(event) => handleA11yChange(name, event.target.checked)} /></label>)}</div>;
 }
 
 function AboutPanel({ setLegalPanel }) {
-  return <div className="settings-panel"><PanelHead Icon={Info} title="About & Support" copy="Application and software information." /><div className="setting-action-row"><div><strong>Family Expense Tracker</strong><span>Version 1.0 staging · Built by Victor Okon</span></div></div><button className="settings-link-card" type="button" onClick={() => setLegalPanel("licenses")}><Scale size={20} /><span><strong>Open-source licences</strong><small>Review the software used to build this application.</small></span></button><InfoBox>A public support address will be displayed here after it is configured and monitored.</InfoBox></div>;
+  return <div className="settings-panel"><PanelHead Icon={Info} title="About" /><div className="settings-control-row"><span><strong>Family Expense Tracker</strong><small>Version 1.0 staging</small></span><span className="settings-byline">Built by Victor</span></div><button className="settings-link-card" type="button" onClick={() => setLegalPanel("licenses")}><Scale size={18} /><span><strong>Open-source licenses</strong><small>Software used in this app</small></span></button></div>;
 }
