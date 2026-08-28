@@ -5,6 +5,7 @@ import {
   ReceiptText,
   ShoppingBasket,
   Wallet,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -27,6 +28,11 @@ export default function Dashboard() {
   const { currency } = useCurrency();
   const [expenses, setExpenses] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const [budget, setBudget] = useState(null);
+  const [budgetAmount, setBudgetAmount] = useState("");
+  const [showBudget, setShowBudget] = useState(false);
+  const [budgetNotice, setBudgetNotice] = useState("");
+  const [savingBudget, setSavingBudget] = useState(false);
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -38,6 +44,7 @@ export default function Dashboard() {
     if (view === "family" && !family) {
       setExpenses([]);
       setReminders([]);
+      setBudget(null);
       return;
     }
 
@@ -54,11 +61,53 @@ export default function Dashboard() {
           view,
         },
       }),
-    ]).then(([expenseResult, reminderResult]) => {
+      api.get("/budgets/summary", {
+        params: {
+          familyId: view === "family" ? family?.id : undefined,
+          view,
+          month: currentMonth(),
+        },
+      }),
+    ]).then(([expenseResult, reminderResult, budgetResult]) => {
       if (expenseResult.status === "fulfilled") setExpenses(expenseResult.value.data);
       if (reminderResult.status === "fulfilled") setReminders(reminderResult.value.data);
+      if (budgetResult.status === "fulfilled") {
+        setBudget(budgetResult.value.data);
+        setBudgetAmount(budgetResult.value.data.budget?.amount ? String(budgetResult.value.data.budget.amount) : "");
+      }
     });
   }, [family?.id, view]);
+
+  async function saveBudget(event) {
+    event.preventDefault();
+    const amount = Number(budgetAmount);
+    if (!Number.isFinite(amount) || amount <= 0 || savingBudget) return;
+
+    setSavingBudget(true);
+    setBudgetNotice("");
+    try {
+      await api.put("/budgets", {
+        view,
+        familyId: view === "family" ? family?.id : null,
+        month: currentMonth(),
+        amount,
+        currency,
+      });
+      const response = await api.get("/budgets/summary", {
+        params: {
+          familyId: view === "family" ? family?.id : undefined,
+          view,
+          month: currentMonth(),
+        },
+      });
+      setBudget(response.data);
+      setShowBudget(false);
+    } catch (error) {
+      setBudgetNotice(error.response?.data?.message || "The budget could not be saved. Please try again.");
+    } finally {
+      setSavingBudget(false);
+    }
+  }
 
   const monthExpenses = useMemo(
     () => expenses.filter((expense) => (expense.date || "").startsWith(currentMonth())),
@@ -116,8 +165,10 @@ export default function Dashboard() {
         <article className="stat">
           <div className="stat-icon"><Wallet size={20} /></div>
           <span className="stat-label">Monthly budget</span>
-          <output className="stat-value">—</output>
-          <Link to="/settings" className="stat-note stat-link">Set a budget</Link>
+          <output className="stat-value">{budget?.budget ? money(budget.budget.amount, currency) : "—"}</output>
+          <button type="button" className="stat-note stat-link stat-action" onClick={() => { setBudgetNotice(""); setShowBudget(true); }}>
+            {budget?.budget ? "Edit budget" : "Set a budget"}
+          </button>
         </article>
         <article className="stat">
           <div className="stat-icon"><AlarmClock size={20} /></div>
@@ -183,6 +234,31 @@ export default function Dashboard() {
           ))
         )}
       </section>
+
+      {showBudget && (
+        <div className="modal-layer">
+          <form className="modal-card" onSubmit={saveBudget}>
+            <div className="drawer-head">
+              <div>
+                <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
+                <h2>Monthly budget</h2>
+              </div>
+              <button className="icon-btn" type="button" onClick={() => setShowBudget(false)} aria-label="Close budget form">
+                <X size={20} />
+              </button>
+            </div>
+            <label className="field">
+              <span>Budget amount ({currency})</span>
+              <input type="number" min="0.01" step="0.01" value={budgetAmount} onChange={(event) => setBudgetAmount(event.target.value)} required autoFocus />
+            </label>
+            {budgetNotice && <p className="form-error" role="alert">{budgetNotice}</p>}
+            <div className="drawer-actions">
+              <button className="btn ghost" type="button" onClick={() => setShowBudget(false)}>Cancel</button>
+              <button className="btn primary" type="submit" disabled={savingBudget}>{savingBudget ? "Saving…" : "Save budget"}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
