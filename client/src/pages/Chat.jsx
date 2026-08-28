@@ -53,7 +53,8 @@ export default function Chat() {
     return msg.isVoice === true;
   }
   function isSystemMessage(msg) {
-    return typeof msg.message === "string" && msg.message.startsWith("💸");
+    if (typeof msg.message !== "string") return false;
+    return msg.message.startsWith("💸") || /\badded an expense:\s/i.test(msg.message);
   }
 
   // Load messages
@@ -315,6 +316,7 @@ export default function Chat() {
     (a.createdAt || "").localeCompare(b.createdAt || "")
   );
   const sharedExpenses = sortedMessages.filter(isSystemMessage).slice(-5).reverse();
+  const conversationMessages = sortedMessages.filter((message) => !isSystemMessage(message));
 
   return (
     <div className="page chat-page">
@@ -363,7 +365,7 @@ export default function Chat() {
 
         <div className="chat-card">
           <div className="chat-window" role="log" aria-live="polite" aria-label="Chat messages">
-            {sortedMessages.map((m, i) => {
+            {conversationMessages.map((m, i) => {
               const isMe = m.user?.name === user?.name;
               const isSystem = isSystemMessage(m);
               const isImage = isImageMessage(m);
@@ -414,7 +416,7 @@ export default function Chat() {
                 </div>
               );
             })}
-            {sortedMessages.length === 0 && (
+            {conversationMessages.length === 0 && (
               <p className="empty">No messages yet. Say hi to your family! 👋</p>
             )}
             <div ref={bottomRef} />
