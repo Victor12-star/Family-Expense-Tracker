@@ -24,7 +24,11 @@ export default function Register() {
       // immediately instead of sending the new user through login again.
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      if (!err.response) {
+        setError("The app could not reach the registration server. Please wait a moment and try again.");
+      } else {
+        setError(err.response.data?.message || "Registration failed. Please check your details.");
+      }
     } finally {
       setLoading(false);
     }

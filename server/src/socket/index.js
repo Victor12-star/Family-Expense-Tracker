@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 import { createMessage } from "../services/chat.service.js";
+import { corsOrigin } from "../middleware/security.js";
 
 async function isFamilyMember(userId, familyId) {
   if (!userId || !familyId) return false;
@@ -15,7 +16,7 @@ async function isFamilyMember(userId, familyId) {
 
 export function initSocket(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: env.clientUrl, credentials: true },
+    cors: { origin: corsOrigin, credentials: true },
   });
 
   io.use((socket, next) => {

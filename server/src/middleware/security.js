@@ -10,14 +10,30 @@ export function securityHeaders() {
   });
 }
 
+const configuredOrigins = env.clientUrl
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+// Vercel gives every Preview deployment a new hostname. This expression is
+// deliberately restricted to this project and account; it does not trust all
+// vercel.app websites.
+const projectPreviewOrigin = /^https:\/\/family-expense-tracker(?:-[a-z0-9-]+)?-victor-0ede\.vercel\.app$/i;
+
+export function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  const normalized = origin.replace(/\/$/, "");
+  return configuredOrigins.includes(normalized) || projectPreviewOrigin.test(normalized);
+}
+
+export function corsOrigin(origin, callback) {
+  if (isAllowedOrigin(origin)) return callback(null, true);
+  return callback(new Error("This website is not allowed to access the API"));
+}
+
 export function corsPolicy() {
   return cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      const allowed = env.clientUrl.split(",").map((s) => s.trim());
-      if (allowed.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
+    origin: corsOrigin,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
