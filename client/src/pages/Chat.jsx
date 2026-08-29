@@ -4,7 +4,7 @@
 // =====================================================================
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CheckCheck, Copy, EllipsisVertical, Plus, Trash2 } from "lucide-react";
+import { CheckCheck, Copy, EllipsisVertical, Mic, Plus, Square, Trash2 } from "lucide-react";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
@@ -565,7 +565,9 @@ export default function Chat() {
               title={recording ? "Stop and send recording" : "Start voice recording"}
               aria-label={recording ? "Stop and send voice recording" : "Start voice recording"}
             >
-              {recording ? "⏹️" : "🎙️"}
+              {recording
+                ? <Square size={17} fill="currentColor" aria-hidden="true" />
+                : <Mic size={20} aria-hidden="true" />}
             </button>
             {recording && <span className="recording-indicator">● Recording…</span>}
             {uploadingPhoto && <span className="recording-indicator">Sending picture…</span>}

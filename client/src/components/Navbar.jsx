@@ -1,5 +1,4 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 
@@ -16,7 +15,6 @@ const familyNavItems = [
 ];
 
 export default function Navbar() {
-  const { user } = useAuth();
   const { view, setView } = useFamily();
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -29,7 +27,6 @@ export default function Navbar() {
       <div className="nav-start">
         <Link to="/" className="nav-brand" aria-label="Family Expense Tracker home">
           <img src="/brand-mark.png" alt="" className="nav-logo-img" />
-          <span className="nav-name">Family Expense Tracker</span>
         </Link>
       </div>
 
@@ -47,9 +44,6 @@ export default function Navbar() {
             </NavLink>
           ))}
         </nav>
-        <Link to="/settings" className="avatar" aria-label={user?.name ? `Open settings for ${user.name}` : "Open settings"}>
-          {user?.name?.[0]?.toUpperCase() || "U"}
-        </Link>
       </div>
     </header>
   );
