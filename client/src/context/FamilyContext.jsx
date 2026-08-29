@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { api } from "../api/client.js";
+import { useAuth } from "./AuthContext.jsx";
 
 const FamilyContext = createContext(null);
 const VIEW_KEY = "fet_view";
 
 export function FamilyProvider({ children }) {
+  const { user, loading: authLoading } = useAuth();
   const [family, setFamily] = useState(null);
   const [familyLoading, setFamilyLoading] = useState(true);
   const [view, setViewState] = useState(() => {
@@ -45,8 +47,18 @@ export function FamilyProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setFamily(null);
+      setFamilyLoading(false);
+      return;
+    }
+    // Do not expose a family from the previous session while the new
+    // account's membership is being resolved.
+    setFamily(null);
+    setFamilyLoading(true);
     refreshFamilies();
-  }, [refreshFamilies]);
+  }, [authLoading, user?.id, refreshFamilies]);
 
   return (
     <FamilyContext.Provider
