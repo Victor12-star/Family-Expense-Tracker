@@ -57,7 +57,7 @@ export default function Chat() {
   }
   function isVoiceMessage(msg) {
     return msg.isVoice === true
-      || (typeof msg.message === "string" && msg.message.startsWith("data:audio/"));
+      || (typeof msg.message === "string" && /^data:(?:audio\/(?:webm|mp4|ogg|mpeg|wav|x-m4a)|video\/(?:webm|mp4)|application\/ogg)[;,]/i.test(msg.message));
   }
   function isSystemMessage(msg) {
     if (typeof msg.message !== "string") return false;
@@ -287,7 +287,16 @@ export default function Chat() {
       recorder.onstop = async () => {
         const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
         const durationSec = Math.round(durationMs / 1000);
-        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        // Some mobile browsers report an audio-only recording as video/webm
+        // or video/mp4. Normalize the Blob MIME type so every family member's
+        // browser renders the saved data URL with an audio player.
+        const recordedType = recorder.mimeType || "audio/webm";
+        const audioType = recordedType.includes("mp4")
+          ? "audio/mp4"
+          : recordedType.includes("ogg")
+            ? "audio/ogg"
+            : "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: audioType });
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
         if (blob.size > 0) {
