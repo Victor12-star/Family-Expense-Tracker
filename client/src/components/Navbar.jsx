@@ -1,3 +1,4 @@
+import { Home } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
@@ -27,9 +28,15 @@ export default function Navbar() {
   return (
     <header className={`navbar ${isHome ? "navbar-home" : "navbar-inner"}`}>
       <div className="nav-start">
+        <NavLink to="/" end className="nav-home-link desktop-home-link" aria-label={t("home", "Home")}>
+          <Home size={18} aria-hidden="true" />
+          <span>{t("home", "Home")}</span>
+        </NavLink>
       </div>
 
-      {isHome && <ViewToggle view={view} setView={setView} />}
+      <div className="navbar-view-toggle">
+        <ViewToggle view={view} setView={setView} />
+      </div>
 
       <div className="nav-actions">
         <nav className="nav-links" aria-label="Primary navigation">
