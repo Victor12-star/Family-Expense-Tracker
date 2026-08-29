@@ -4187,28 +4187,48 @@ html.dark .chat-msg.me .chat-bubble {
   color: var(--muted);
 }
 
-.language-switch button {
-  min-width: 36px;
+.language-switch select {
+  min-width: 0;
+  max-width: 158px;
   min-height: 32px;
-  padding: 4px 7px;
+  padding: 4px 28px 4px 8px;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
   font: inherit;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.language-switch button.active {
-  background: var(--accent);
-  color: #fff;
+.language-switch select:focus-visible {
+  outline-offset: 0;
+}
+
+html[dir="rtl"] .nav-links,
+html[dir="rtl"] .dashboard-hero-actions,
+html[dir="rtl"] .settings-control-row,
+html[dir="rtl"] .member-profile,
+html[dir="rtl"] .chat-input {
+  direction: rtl;
+}
+
+html[dir="rtl"] .chat-msg.me {
+  align-self: flex-start;
+}
+
+html[dir="rtl"] .chat-msg:not(.me) {
+  align-self: flex-end;
 }
 
 @media (max-width: 600px) {
   .dashboard-hero-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .language-switch select {
+    max-width: 124px;
   }
 }
