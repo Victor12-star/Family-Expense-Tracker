@@ -25,7 +25,7 @@ function greetingFor(date, t) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { family, view } = useFamily();
+  const { family, familyLoading, view } = useFamily();
   const { currency } = useCurrency();
   const { t } = useLanguage();
   const [expenses, setExpenses] = useState([]);
@@ -77,6 +77,10 @@ export default function Dashboard() {
 
   async function saveBudget(event) {
     event.preventDefault();
+    if (view === "family" && !family) {
+      setBudgetNotice("Create or join a family before setting a Family budget.");
+      return;
+    }
     const amount = Number(budgetAmount);
     if (!Number.isFinite(amount) || amount <= 0 || savingBudget) return;
 
@@ -143,7 +147,7 @@ export default function Dashboard() {
           <div className="stat-icon"><Wallet size={20} /></div>
           <span className="stat-label">{t("monthlyBudget", "Monthly budget")}</span>
           <output className="stat-value">{budget?.budget ? money(budget.budget.amount, currency) : "—"}</output>
-          {view === "family" && !family ? (
+          {view === "family" && (familyLoading || !family) ? (
             <Link className="stat-note stat-link" to="/family">{t("createFamilyForBudget", "Create a family to set a budget")}</Link>
           ) : (
             <button type="button" className="stat-note stat-link stat-action" onClick={() => { setBudgetNotice(""); setShowBudget(true); }}>
