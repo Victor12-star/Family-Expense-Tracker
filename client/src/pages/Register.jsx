@@ -24,10 +24,12 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (loading || success) return;
     setError("");
 
     if (!PASSWORD_RULE.test(password)) {
@@ -38,9 +40,10 @@ export default function Register() {
     setLoading(true);
     try {
       await register(name.trim(), email.trim(), password);
-      // Registration returns a complete session, so enter the application
-      // immediately instead of sending the new user through login again.
-      navigate("/", { replace: true });
+      setSuccess("Account created successfully. Redirecting you to sign in…");
+      window.setTimeout(() => {
+        navigate("/login", { replace: true, state: { accountCreated: true } });
+      }, 2000);
     } catch (err) {
       if (!err.response) {
         setError("The app could not reach the registration server. Please wait a moment and try again.");
@@ -60,23 +63,24 @@ export default function Register() {
         <h1>{t("createAccount", "Create account")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
+        {success && <div className="success-banner" role="status" aria-live="polite">{success}</div>}
 
         <label className="field">
           <span>{t("name", "Name")}</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} minLength="1" maxLength="60" autoComplete="name" required />
+          <input value={name} onChange={(e) => setName(e.target.value)} minLength="1" maxLength="60" autoComplete="name" required disabled={Boolean(success)} />
         </label>
         <label className="field">
           <span>{t("email", "Email")}</span>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required disabled={Boolean(success)} />
         </label>
         <label className="field">
           <span>{t("password", "Password")}</span>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength="8" maxLength="72" autoComplete="new-password" aria-describedby="password-rules" required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength="8" maxLength="72" autoComplete="new-password" aria-describedby="password-rules" required disabled={Boolean(success)} />
           <small id="password-rules">8 to 72 characters with uppercase, lowercase, and a number</small>
         </label>
 
-        <button className="btn primary" disabled={loading}>
-          {loading ? t("loading", "Loading…") : t("createAccount", "Create account")}
+        <button className="btn primary" disabled={loading || Boolean(success)}>
+          {success ? "Account created" : loading ? t("loading", "Loading…") : t("createAccount", "Create account")}
         </button>
         <p className="auth-links">
           <Link to="/login">Already have an account? Sign in</Link>
