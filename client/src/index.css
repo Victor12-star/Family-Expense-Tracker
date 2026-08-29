@@ -3897,3 +3897,145 @@ button:disabled {
     display: none;
   }
 }
+
+/* Settings uses a compact master-detail pattern on phones. */
+@media (max-width: 760px) {
+  .settings-page {
+    min-width: 0;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .settings-head h1 {
+    font-size: 26px;
+  }
+
+  .settings-head p {
+    max-width: 32ch;
+    line-height: 1.4;
+  }
+
+  .settings-layout,
+  .settings-layout.settings-menu-only {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .settings-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    overflow: visible;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, #86efac 38%, var(--border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--panel) 97%, #ecfdf5);
+  }
+
+  .settings-nav button {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 10px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .settings-nav button.active {
+    border-color: #86efac;
+    background: #ecfdf5;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, .08);
+  }
+
+  .settings-content,
+  .settings-panel {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .settings-panel {
+    padding: 16px;
+    border-radius: 15px;
+  }
+
+  .settings-panel-head {
+    align-items: center;
+    padding-bottom: 12px;
+  }
+
+  .settings-control-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 0;
+    padding: 13px 0;
+  }
+
+  .settings-control-row select,
+  .settings-inline-control {
+    width: 100%;
+    max-width: none;
+  }
+
+  .settings-inline-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .settings-inline-control select,
+  .settings-inline-control .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .settings-inline-control .btn {
+    padding-inline: 14px;
+  }
+
+  .account-summary {
+    padding-top: 14px;
+  }
+
+  .account-summary > div {
+    min-width: 0;
+  }
+
+  .account-summary strong,
+  .account-summary span {
+    overflow-wrap: anywhere;
+  }
+
+  .settings-link-card {
+    min-height: 52px;
+  }
+
+  .settings-footer,
+  .settings-layout.settings-menu-only + .settings-footer {
+    width: 100%;
+    max-width: none;
+    margin: 8px 0 0;
+    padding: 14px 2px 6px;
+  }
+
+  .settings-footer a {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .legal-modal {
+    width: min(100%, calc(100vw - 24px));
+    max-height: min(82dvh, 680px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .settings-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
