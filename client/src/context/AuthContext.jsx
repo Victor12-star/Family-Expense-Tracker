@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { api, setTokens, clearTokens, getRefreshToken } from "../api/client.js";
+import { api, setTokens, clearTokens, getRefreshToken, refreshSession } from "../api/client.js";
 
 const AuthContext = createContext(null);
 const USER_KEY = "fet_user";
@@ -31,8 +31,7 @@ export function AuthProvider({ children }) {
     // This keeps the user signed in across page reloads
     async function restoreSession() {
       try {
-        const { data } = await api.post("/auth/refresh", { refreshToken });
-        setTokens(data);
+        const data = await refreshSession();
         setUser(data.user);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       } catch (_) {
@@ -57,9 +56,6 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (name, email, password) => {
     const res = await api.post("/auth/register", { name, email, password });
-    setTokens(res.data);
-    setUser(res.data.user);
-    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
     return res.data;
   }, []);
 
