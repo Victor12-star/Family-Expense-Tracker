@@ -20,7 +20,12 @@ export async function registerUser({ name, email, password }) {
     data: { name, email: normalizedEmail, passwordHash },
   });
 
-  return issueTokens(user);
+  // Registration creates the account only. A session is issued exclusively by
+  // the login endpoint so the user deliberately signs in after registration.
+  return {
+    message: "Account created successfully",
+    user: { id: user.id, name: user.name, email: user.email },
+  };
 }
 
 export async function loginUser({ email, password }) {
