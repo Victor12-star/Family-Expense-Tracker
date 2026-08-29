@@ -2,7 +2,7 @@
 // Login page
 // =====================================================================
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
@@ -10,6 +10,7 @@ export default function Login() {
   const { login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -37,6 +38,9 @@ export default function Login() {
         <h1>{t("signIn", "Sign in")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
+        {location.state?.accountCreated && (
+          <div className="success-banner" role="status">Your account is ready. Sign in to continue.</div>
+        )}
 
         <label className="field">
           <span>{t("email", "Email")}</span>
