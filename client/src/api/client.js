@@ -35,6 +35,13 @@ export function clearTokens() {
   localStorage.removeItem("fet_refresh");
 }
 
+// A temporary network failure or sleeping free-tier server must not sign the
+// user out. Clear the session only when the authentication server explicitly
+// rejects the refresh token.
+export function isSessionRejected(error) {
+  return [400, 401, 403].includes(error?.response?.status);
+}
+
 // Refresh-token rotation allows each token to be used only once. Reuse one
 // in-flight request so simultaneous API 401 responses cannot rotate the same
 // token multiple times and accidentally sign out a valid session.
@@ -77,8 +84,11 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
       } catch (refreshError) {
-        clearTokens();
-        if (window.location.pathname !== "/login") window.location.replace("/login");
+        if (isSessionRejected(refreshError)) {
+          clearTokens();
+          localStorage.removeItem("fet_user");
+          if (window.location.pathname !== "/login") window.location.replace("/login");
+        }
         return Promise.reject(refreshError);
       }
     }
