@@ -8,6 +8,11 @@ function chatStorageNeedsRepair(error) {
   return error?.code === "P2021" || error?.code === "P2022";
 }
 
+function messageContainsVoiceData(message) {
+  return typeof message === "string"
+    && /^data:(?:audio\/(?:webm|mp4|ogg|mpeg|wav|x-m4a)|video\/(?:webm|mp4)|application\/ogg)[;,]/i.test(message);
+}
+
 async function listLegacyMessages(familyId, limit) {
   const safeLimit = Math.min(Math.max(Number(limit) || 120, 20), 250);
   const rows = await prisma.$queryRaw`
@@ -24,7 +29,7 @@ async function listLegacyMessages(familyId, limit) {
     familyId: row.familyId,
     userId: row.userId,
     message: row.message,
-    isVoice: typeof row.message === "string" && row.message.startsWith("data:audio/"),
+    isVoice: messageContainsVoiceData(row.message),
     duration: 0,
     replyToId: null,
     deletedAt: null,
@@ -84,7 +89,7 @@ export async function createMessage({ userId, familyId, message, isVoice, durati
     const user = await prisma.user.findUnique({ where: { id: userId }, select: userSelect });
     return {
       id, familyId, userId, message, createdAt, user,
-      isVoice: isVoice === true || message.startsWith("data:audio/"),
+      isVoice: isVoice === true || messageContainsVoiceData(message),
       duration: Math.max(0, Number(duration) || 0),
       replyToId: null, deletedAt: null, replyTo: null,
     };
