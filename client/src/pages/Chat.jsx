@@ -17,6 +17,56 @@ const EMOJIS = [
 ];
 
 const SHORTCUTS = { ":)": "😀", ":(": "😢", ":D": "😁", "<3": "❤️", ":P": "😛" };
+const MAX_VOICE_SECONDS = 55;
+
+// Convert a browser-specific recording into mono 16 kHz PCM WAV. This is
+// intentionally compact and plays inline across modern Android, iOS and
+// desktop browsers without asking the recipient to download the recording.
+async function createInlineVoiceBlob(recordedBlob) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const OfflineContextClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!AudioContextClass || !OfflineContextClass) return recordedBlob;
+
+  const context = new AudioContextClass();
+  try {
+    const decoded = await context.decodeAudioData(await recordedBlob.arrayBuffer());
+    const sampleRate = 16000;
+    const frameCount = Math.max(1, Math.ceil(decoded.duration * sampleRate));
+    const offline = new OfflineContextClass(1, frameCount, sampleRate);
+    const source = offline.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offline.destination);
+    source.start(0);
+    const rendered = await offline.startRendering();
+    const samples = rendered.getChannelData(0);
+    const wav = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(wav);
+    const write = (offset, value) => {
+      for (let index = 0; index < value.length; index += 1) view.setUint8(offset + index, value.charCodeAt(index));
+    };
+
+    write(0, "RIFF");
+    view.setUint32(4, 36 + samples.length * 2, true);
+    write(8, "WAVE");
+    write(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    write(36, "data");
+    view.setUint32(40, samples.length * 2, true);
+    for (let index = 0; index < samples.length; index += 1) {
+      const sample = Math.max(-1, Math.min(1, samples[index]));
+      view.setInt16(44 + index * 2, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+    }
+    return new Blob([wav], { type: "audio/wav" });
+  } finally {
+    await context.close().catch(() => {});
+  }
+}
 
 export default function Chat() {
   const { family, view, familyLoading, refreshFamilies } = useFamily();
@@ -39,6 +89,7 @@ export default function Chat() {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const recordStartRef = useRef(null);
+  const recordingLimitRef = useRef(null);
   const bottomRef = useRef(null);
   const chatWindowRef = useRef(null);
   const shouldAutoScrollRef = useRef(true);
@@ -285,6 +336,8 @@ export default function Chat() {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
+        if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+        recordingLimitRef.current = null;
         const durationMs = recordStartRef.current ? Date.now() - recordStartRef.current : 0;
         const durationSec = Math.round(durationMs / 1000);
         // Some mobile browsers report an audio-only recording as video/webm
@@ -316,11 +369,24 @@ export default function Chat() {
               setNotice(err.response?.data?.message || "The voice message could not be sent. Please try again.");
             }
           };
-          reader.readAsDataURL(blob);
+          try {
+            const inlineBlob = await createInlineVoiceBlob(blob);
+            reader.readAsDataURL(inlineBlob);
+          } catch (error) {
+            console.error("Voice conversion failed:", error);
+            reader.readAsDataURL(blob);
+          }
         }
       };
 
       recorder.start();
+      recordingLimitRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === "recording") {
+          mediaRecorderRef.current.stop();
+          setRecording(false);
+          setNotice("Maximum recording length reached. Sending voice message…");
+        }
+      }, MAX_VOICE_SECONDS * 1000);
       setRecording(true);
       setNotice("Recording started. Click the microphone again to send.");
     } catch (err) {
@@ -334,6 +400,8 @@ export default function Chat() {
       try {
         mediaRecorderRef.current.stop();
       } catch (_) {}
+      if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+      recordingLimitRef.current = null;
       setRecording(false);
       setNotice("Sending voice message…");
     }
