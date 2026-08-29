@@ -32,6 +32,7 @@ export default function Chat() {
   const [lightbox, setLightbox] = useState(null);
   const [conversationMenuOpen, setConversationMenuOpen] = useState(false);
   const [messageMenuId, setMessageMenuId] = useState(null);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const galleryInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -148,18 +149,21 @@ export default function Chat() {
       await api.delete(`/chat/${family.id}/messages/${id}`);
       await loadMessages();
     } catch (_) {
-      alert("You can only delete your own messages.");
+      setNotice("You can only delete your own messages.");
     }
   }
 
   // Delete all messages in the family chat
   async function deleteAll() {
     if (!family) return;
-    if (!window.confirm("Delete ALL messages in this chat?")) return;
+    setConfirmClearOpen(false);
     try {
       await api.delete(`/chat/${family.id}/messages`);
       await loadMessages();
-    } catch (_) {}
+      setNotice("Chat cleared.");
+    } catch (err) {
+      setNotice(err.response?.data?.message || "The chat could not be cleared. Try again.");
+    }
   }
 
   function messageCopyText(message) {
@@ -404,7 +408,7 @@ export default function Chat() {
               <button type="button" role="menuitem" onClick={() => { copyConversation(conversationMessages); setConversationMenuOpen(false); }}>
                 <Copy size={16} aria-hidden="true" /> {t("copyAll", "Copy all messages")}
               </button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { setConversationMenuOpen(false); deleteAll(); }}>
+              <button type="button" role="menuitem" className="danger" onClick={() => { setConversationMenuOpen(false); setConfirmClearOpen(true); }}>
                 <Trash2 size={16} aria-hidden="true" /> {t("clearChat", "Clear chat")}
               </button>
             </div>
@@ -582,6 +586,27 @@ export default function Chat() {
         <div className="lightbox" role="dialog" aria-modal="true" aria-label="Picture preview" onClick={() => setLightbox(null)}>
           <img src={lightbox} alt="Shared picture enlarged" className="lightbox-img" />
           <button type="button" className="lightbox-close" onClick={() => setLightbox(null)} aria-label="Close picture">×</button>
+        </div>
+      )}
+
+      {confirmClearOpen && (
+        <div
+          className="modal-layer"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setConfirmClearOpen(false);
+          }}
+        >
+          <div className="modal-card chat-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="clear-chat-title">
+            <div>
+              <h2 id="clear-chat-title">Clear this chat?</h2>
+              <p>This permanently removes all messages for every family member.</p>
+            </div>
+            <div className="drawer-actions">
+              <button className="btn ghost" type="button" onClick={() => setConfirmClearOpen(false)}>Cancel</button>
+              <button className="btn danger" type="button" onClick={deleteAll}>Clear chat</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -93,6 +93,10 @@ export default function Settings() {
     setA11y(getAccessibilitySettings());
   }
 
+  function toggleSection(id) {
+    setActiveSection((current) => current === id ? null : id);
+  }
+
   async function requestNotifications() {
     if (!("Notification" in window)) {
       showNotice("Browser notifications are not supported on this device.");
@@ -126,8 +130,9 @@ export default function Settings() {
               type="button"
               key={id}
               className={activeSection === id ? "active" : ""}
-              onClick={() => setActiveSection((current) => current === id ? null : id)}
+              onClick={() => toggleSection(id)}
               aria-expanded={activeSection === id}
+              aria-pressed={activeSection === id}
               aria-controls={activeSection === id ? "settings-detail" : undefined}
             >
               {t(id === "privacy" ? "privacyData" : id === "about" ? "aboutSupport" : id, label)}

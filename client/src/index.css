@@ -1591,15 +1591,15 @@ html {
 
 html.dark {
   color-scheme: dark;
-  --bg-top: #020617;
-  --bg-mid: #050b16;
-  --bg-bottom: #080f1d;
-  --panel: #0b1220;
-  --panel-strong: #111a2b;
-  --border: #263247;
-  --text: #f4f7fb;
-  --muted: #aab6ca;
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+  --bg-top: #101827;
+  --bg-mid: #152033;
+  --bg-bottom: #19263a;
+  --panel: #1d293b;
+  --panel-strong: #263449;
+  --border: #3a4a62;
+  --text: #f3f6fb;
+  --muted: #b3bfd1;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
 }
 
 body {
@@ -2997,6 +2997,29 @@ button:disabled {
   border: 1px solid var(--border);
 }
 
+.chat-confirm-modal {
+  gap: 20px;
+  max-width: 420px;
+}
+
+.chat-confirm-modal p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.btn.danger {
+  color: #fff;
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+.btn.danger:hover {
+  border-color: #b91c1c;
+  background: #b91c1c;
+}
+
 .completion-comparison {
   padding: 14px;
   border: 1px solid var(--border);
@@ -4124,7 +4147,7 @@ html.dark .settings-nav {
 html.dark .chat-window,
 html.dark .chat-input {
   border-color: var(--border);
-  background: #050b16;
+  background: #172235;
   color: var(--text);
 }
 

@@ -1,4 +1,4 @@
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -27,9 +27,6 @@ export default function Navbar() {
   return (
     <header className={`navbar ${isHome ? "navbar-home" : "navbar-inner"}`}>
       <div className="nav-start">
-        <Link to="/" className="nav-brand" aria-label="Family Expense Tracker home">
-          <img src="/brand-mark.png" alt="" className="nav-logo-img" />
-        </Link>
       </div>
 
       {isHome && <ViewToggle view={view} setView={setView} />}
