@@ -53,10 +53,8 @@ export default function Register() {
   return (
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="auth-logo">👨‍👩‍👧‍👦</div>
         <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
         <h1>Create account</h1>
-        <p className="tag">Join Family Expense Tracker</p>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
 
