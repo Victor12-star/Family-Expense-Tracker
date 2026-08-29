@@ -4182,9 +4182,8 @@ html.dark .chat-msg.me .chat-bubble {
 }
 
 .language-switch {
-  gap: 3px;
   min-height: 42px;
-  padding: 4px 5px 4px 9px;
+  padding: 4px 5px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
   border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
