@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useCurrency } from "../context/CurrencyContext.jsx";
 import { api } from "../api/client.js";
@@ -30,6 +31,7 @@ export default function Expenses() {
   const { family, view } = useFamily();
   const { currency } = useCurrency();
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [expenses, setExpenses] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [showForm, setShowForm] = useState(false);
@@ -37,6 +39,26 @@ export default function Expenses() {
   const [category, setCategory] = useState("All");
   const [month, setMonth] = useState(currentMonth());
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  function openForm() {
+    setFormError("");
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setFormError("");
+    if (searchParams.has("add")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("add");
+      setSearchParams(next, { replace: true });
+    }
+  }
+
+  useEffect(() => {
+    if (searchParams.get("add") === "1") openForm();
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     if (view === "family" && !family) {
@@ -58,8 +80,13 @@ export default function Expenses() {
 
   async function submit(e) {
     e.preventDefault();
-    if ((view === "family" && !family) || submitting) return;
+    if (submitting) return;
+    if (view === "family" && !family) {
+      setFormError("Create or join a family before adding a family expense.");
+      return;
+    }
     setSubmitting(true);
+    setFormError("");
     try {
       await api.post("/expenses", {
         ...form,
@@ -69,8 +96,10 @@ export default function Expenses() {
         amount: Number.parseFloat(form.amount),
       });
       setForm(initialForm());
-      setShowForm(false);
+      closeForm();
       await load();
+    } catch (error) {
+      setFormError(error.response?.data?.message || "The expense could not be added. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -106,7 +135,7 @@ export default function Expenses() {
           <h1>{t("expenses", "Expenses")}</h1>
           <p className="subtitle">{t("trackSpending", "Track, find and review your spending.")}</p>
         </div>
-        <button className="btn primary" onClick={() => setShowForm(true)} type="button">
+        <button className="btn primary" onClick={openForm} type="button">
           <Plus size={18} /> {t("addExpense", "Add expense")}
         </button>
       </div>
@@ -149,7 +178,7 @@ export default function Expenses() {
             <h2>{t("noExpensesFound", "No expenses found")}</h2>
             <p>{expenses.length === 0 ? "Your expenses will appear here once you start tracking them." : "Try changing your search or filters."}</p>
             {expenses.length === 0 && (
-              <button className="btn secondary" type="button" onClick={() => setShowForm(true)}>
+              <button className="btn secondary" type="button" onClick={openForm}>
                 <Plus size={17} /> Add your first expense
               </button>
             )}
@@ -214,14 +243,14 @@ export default function Expenses() {
       </section>
 
       {showForm && (
-        <div className="drawer-layer" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setShowForm(false)}>
+        <div className="drawer-layer" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && closeForm()}>
           <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
             <div className="drawer-head">
               <div>
                 <span className="eyebrow">{t("newTransaction", "New transaction")}</span>
                 <h2 id="add-expense-title">{t("addExpense", "Add expense")}</h2>
               </div>
-              <button className="icon-btn" type="button" onClick={() => setShowForm(false)} aria-label="Close">
+              <button className="icon-btn" type="button" onClick={closeForm} aria-label="Close">
                 <X size={20} />
               </button>
             </div>
@@ -274,8 +303,9 @@ export default function Expenses() {
                   </label>
                 </>
               )}
+              {formError && <p className="form-error" role="alert">{formError}</p>}
               <div className="drawer-actions">
-                <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>{t("cancel", "Cancel")}</button>
+                <button className="btn ghost" type="button" onClick={closeForm}>{t("cancel", "Cancel")}</button>
                 <button className="btn primary" type="submit" disabled={submitting}>
                   <Plus size={18} /> {submitting ? "Adding…" : "Add expense"}
                 </button>
