@@ -3356,6 +3356,15 @@ button:disabled {
   margin-top: 16px;
 }
 
+.settings-layout.settings-menu-only {
+  grid-template-columns: minmax(190px, 280px);
+}
+
+.settings-layout.settings-menu-only + .settings-footer {
+  margin-left: 0;
+  max-width: 640px;
+}
+
 .settings-panel {
   border: 1px solid color-mix(in srgb, #86efac 35%, var(--border));
   border-radius: 18px;

@@ -65,7 +65,7 @@ export default function Settings() {
   const { user, logout } = useAuth();
   const { currency, changeCurrency } = useCurrency();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState("account");
+  const [activeSection, setActiveSection] = useState(null);
   const [theme, setTheme] = useState(readTheme);
   const [sound, setSound] = useState(() => localStorage.getItem(SOUND_KEY) || "soft");
   const [a11y, setA11y] = useState(getAccessibilitySettings());
@@ -117,16 +117,23 @@ export default function Settings() {
       </div>
       {notice && <div className="success-banner settings-notice" role="status">{notice}</div>}
 
-      <div className="settings-layout">
+      <div className={`settings-layout ${activeSection ? "has-selection" : "settings-menu-only"}`}>
         <nav className="settings-nav" aria-label="Settings sections">
           {sections.map(([id, Icon, label]) => (
-            <button type="button" key={id} className={activeSection === id ? "active" : ""} onClick={() => setActiveSection(id)} aria-current={activeSection === id ? "page" : undefined}>
+            <button
+              type="button"
+              key={id}
+              className={activeSection === id ? "active" : ""}
+              onClick={() => setActiveSection((current) => current === id ? null : id)}
+              aria-expanded={activeSection === id}
+              aria-controls={activeSection === id ? "settings-detail" : undefined}
+            >
               {label}
             </button>
           ))}
         </nav>
 
-        <section className="settings-content">
+        {activeSection && <section className="settings-content" id="settings-detail">
           {activeSection === "account" && <AccountPanel user={user} />}
           {activeSection === "preferences" && <PreferencesPanel currency={currency} changeCurrency={changeCurrency} theme={theme} handleThemeChange={handleThemeChange} />}
           {activeSection === "notifications" && <NotificationsPanel status={notificationStatus} requestNotifications={requestNotifications} sound={sound} setSound={setSound} previewSound={previewSound} />}
@@ -134,7 +141,7 @@ export default function Settings() {
           {activeSection === "privacy" && <PrivacyPanel setLegalPanel={setLegalPanel} />}
           {activeSection === "accessibility" && <AccessibilityPanel a11y={a11y} handleA11yChange={handleA11yChange} />}
           {activeSection === "about" && <AboutPanel setLegalPanel={setLegalPanel} />}
-        </section>
+        </section>}
       </div>
 
       <footer className="settings-footer">
