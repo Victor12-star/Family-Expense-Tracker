@@ -1366,6 +1366,145 @@ html.a11y-motion *::after {
   font-size: 13px;
 }
 
+/* Chat action menus and delivery state */
+.chat-menu-wrap,
+.chat-message-menu-wrap {
+  position: relative;
+}
+
+.chat-overflow-btn,
+.chat-message-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.chat-overflow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.chat-message-menu-wrap {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+}
+
+.chat-msg:not(.me) .chat-message-menu-wrap {
+  right: auto;
+  left: calc(100% + 4px);
+  top: 0;
+}
+
+.chat-message-menu-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 8px;
+  background: transparent;
+  opacity: 0;
+}
+
+.chat-bubble:hover .chat-message-menu-btn,
+.chat-message-menu-btn:focus-visible,
+.chat-message-menu-btn[aria-expanded="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chat-action-menu {
+  position: absolute;
+  z-index: 30;
+  min-width: 176px;
+  padding: 6px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.16);
+}
+
+.conversation-menu {
+  top: calc(100% + 7px);
+  right: 0;
+}
+
+.message-menu {
+  top: 30px;
+  right: 0;
+}
+
+.chat-msg:not(.me) .message-menu {
+  right: auto;
+  left: 0;
+}
+
+.chat-action-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1e293b;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chat-action-menu button:hover,
+.chat-action-menu button:focus-visible {
+  background: #f1f5f9;
+}
+
+.chat-action-menu button.danger {
+  color: #dc2626;
+}
+
+.chat-bubble {
+  position: relative;
+  padding-right: 32px;
+}
+
+.cb-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-height: 16px;
+  margin-top: 2px;
+}
+
+.cb-time {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.chat-delivered {
+  display: inline-flex;
+  color: #16a34a;
+}
+
+.chat-tool-btn svg {
+  display: block;
+  margin: auto;
+}
+
+@media (hover: none) {
+  .chat-message-menu-btn {
+    opacity: 0.72;
+  }
+}
+
 .chat-setup-state {
   min-height: 360px;
   justify-content: center;

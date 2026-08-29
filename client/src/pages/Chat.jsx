@@ -4,6 +4,7 @@
 // =====================================================================
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { CheckCheck, Copy, EllipsisVertical, Plus, Trash2 } from "lucide-react";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
@@ -27,6 +28,8 @@ export default function Chat() {
   const [recording, setRecording] = useState(false);
   const [notice, setNotice] = useState("");
   const [lightbox, setLightbox] = useState(null);
+  const [conversationMenuOpen, setConversationMenuOpen] = useState(false);
+  const [messageMenuId, setMessageMenuId] = useState(null);
 
   const galleryInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -85,6 +88,15 @@ export default function Chat() {
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [family]);
+
+  useEffect(() => {
+    function closeMenus() {
+      setConversationMenuOpen(false);
+      setMessageMenuId(null);
+    }
+    document.addEventListener("click", closeMenus);
+    return () => document.removeEventListener("click", closeMenus);
+  }, []);
 
   // Keep the reader's chosen scroll position. Move to the latest message only
   // on first load, after sending, or when the reader was already near the end.
@@ -146,6 +158,36 @@ export default function Chat() {
       await api.delete(`/chat/${family.id}/messages`);
       await loadMessages();
     } catch (_) {}
+  }
+
+  function messageCopyText(message) {
+    if (isImageMessage(message)) return "[Photo]";
+    if (isVoiceMessage(message)) return "[Voice message]";
+    return message.message || "";
+  }
+
+  async function copyText(value, successMessage) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setNotice(successMessage);
+    } catch (_) {
+      setNotice("Copying is not available in this browser.");
+    }
+  }
+
+  function copyMessage(message) {
+    return copyText(messageCopyText(message), "Message copied.");
+  }
+
+  function copyConversation(items) {
+    const value = items
+      .map((message) => `${message.user?.name || "Family member"}: ${messageCopyText(message)}`)
+      .join("\n");
+    if (!value) {
+      setNotice("There are no messages to copy.");
+      return;
+    }
+    return copyText(value, "Conversation copied.");
   }
 
   // Resize camera photos before sending. Phone photos are often too large for
@@ -293,9 +335,6 @@ export default function Chat() {
       <div className="page chat-page">
         <div className="page-head">
           <h2>Family Chat</h2>
-          <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
-            🗑️ Clear chat
-          </button>
         </div>
         <div className="card">
           <p className="empty">🔒 Chat is only available in <strong>Family</strong> view.</p>
@@ -344,9 +383,31 @@ export default function Chat() {
     <div className="page chat-page">
       <div className="page-head">
         <h2>Family Chat</h2>
-        <button type="button" className="btn ghost" onClick={deleteAll} title="Delete all messages">
-          🗑️ Clear chat
-        </button>
+        <div className="chat-menu-wrap">
+          <button
+            type="button"
+            className="chat-overflow-btn"
+            aria-label="Conversation options"
+            aria-expanded={conversationMenuOpen}
+            onClick={(event) => {
+              event.stopPropagation();
+              setMessageMenuId(null);
+              setConversationMenuOpen((open) => !open);
+            }}
+          >
+            <EllipsisVertical size={20} aria-hidden="true" />
+          </button>
+          {conversationMenuOpen && (
+            <div className="chat-action-menu conversation-menu" role="menu" onClick={(event) => event.stopPropagation()}>
+              <button type="button" role="menuitem" onClick={() => { copyConversation(conversationMessages); setConversationMenuOpen(false); }}>
+                <Copy size={16} aria-hidden="true" /> Copy all messages
+              </button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { setConversationMenuOpen(false); deleteAll(); }}>
+                <Trash2 size={16} aria-hidden="true" /> Clear chat
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="messaging-layout">
@@ -388,7 +449,7 @@ export default function Chat() {
         <div className="chat-card">
           <div ref={chatWindowRef} className="chat-window" role="log" aria-live="polite" aria-label="Chat messages">
             {conversationMessages.map((m, i) => {
-              const isMe = m.user?.name === user?.name;
+              const isMe = m.user?.id === user?.id || m.user?.name === user?.name;
               const isSystem = isSystemMessage(m);
               const isImage = isImageMessage(m);
               const isVoice = isVoiceMessage(m);
@@ -419,21 +480,43 @@ export default function Chat() {
                     ) : (
                       <div>{m.message}</div>
                     )}
-                    <div className="cb-time">
-                      {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                    <div className="cb-meta">
+                      <span className="cb-time">
+                        {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                      </span>
+                      {isMe && (
+                        <span className="chat-delivered" aria-label="Delivered" title="Delivered">
+                          <CheckCheck size={14} aria-hidden="true" />
+                        </span>
+                      )}
                     </div>
-                    {/* Delete this message (own messages only) */}
-                    {isMe && (
+                    <div className="chat-message-menu-wrap">
                       <button
                         type="button"
-                        className="chat-delete-btn"
-                        onClick={() => deleteOne(m.id)}
-                        aria-label="Delete message"
-                        title="Delete message"
+                        className="chat-message-menu-btn"
+                        aria-label="Message options"
+                        aria-expanded={messageMenuId === m.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConversationMenuOpen(false);
+                          setMessageMenuId((id) => id === m.id ? null : m.id);
+                        }}
                       >
-                        🗑️
+                        <EllipsisVertical size={16} aria-hidden="true" />
                       </button>
-                    )}
+                      {messageMenuId === m.id && (
+                        <div className="chat-action-menu message-menu" role="menu" onClick={(event) => event.stopPropagation()}>
+                          <button type="button" role="menuitem" onClick={() => { copyMessage(m); setMessageMenuId(null); }}>
+                            <Copy size={15} aria-hidden="true" /> Copy message
+                          </button>
+                          {isMe && (
+                            <button type="button" role="menuitem" className="danger" onClick={() => { setMessageMenuId(null); deleteOne(m.id); }}>
+                              <Trash2 size={15} aria-hidden="true" /> Delete message
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -471,7 +554,7 @@ export default function Chat() {
               title="Choose a picture from gallery"
               aria-label="Choose a picture from gallery"
             >
-              🖼️
+              <Plus size={21} aria-hidden="true" />
             </button>
 
             {/* One click starts recording; the next click stops and sends it. */}
