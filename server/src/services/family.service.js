@@ -22,6 +22,40 @@ async function uniqueInviteCode() {
   throw createError(500, "Could not generate invitation", "INVITE_GENERATION_FAILED");
 }
 
+function inviteStorageUnavailable(error) {
+  // P2021 means the table does not exist. P2022 means a required column is
+  // missing. Both can occur briefly when an older production database is
+  // running newer application code before its migration is repaired.
+  return error?.code === "P2021" || error?.code === "P2022";
+}
+
+function legacyInvite(family, createdById, overrides = {}) {
+  return {
+    id: `legacy-${family.id}`,
+    familyId: family.id,
+    createdById,
+    code: family.inviteCode,
+    expiresAt: null,
+    maxUses: null,
+    uses: 0,
+    revokedAt: null,
+    createdAt: family.createdAt,
+    ...overrides,
+  };
+}
+
+async function createLegacyFamilyInvite({ familyId, createdById }) {
+  // The original Family model has a unique inviteCode and is supported by
+  // joinFamily. Rotating it provides a secure, usable fallback until the
+  // FamilyInvite migration is present in production.
+  const code = randomBytes(8).toString("hex").toUpperCase();
+  const family = await prisma.family.update({
+    where: { id: familyId },
+    data: { inviteCode: code },
+  });
+  return legacyInvite(family, createdById);
+}
+
 export async function createFamily({ name, ownerId }) {
   // Keep the legacy code populated for backwards compatibility during migration.
   const inviteCode = randomBytes(8).toString("hex").toUpperCase();
@@ -45,36 +79,56 @@ export async function getFamily(familyId) {
 }
 
 export async function createFamilyInvite({ familyId, createdById, expiresInHours = 168, maxUses = 5 }) {
-  const code = await uniqueInviteCode();
-  const hours = expiresInHours == null ? null : Number(expiresInHours);
-  const uses = maxUses == null ? null : Number(maxUses);
-  const expiresAt = hours == null || !Number.isFinite(hours)
-    ? null
-    : new Date(Date.now() + Math.max(hours, 1) * 60 * 60 * 1000);
+  try {
+    const code = await uniqueInviteCode();
+    const hours = expiresInHours == null ? null : Number(expiresInHours);
+    const uses = maxUses == null ? null : Number(maxUses);
+    const expiresAt = hours == null || !Number.isFinite(hours)
+      ? null
+      : new Date(Date.now() + Math.max(hours, 1) * 60 * 60 * 1000);
 
-  return prisma.familyInvite.create({
-    data: {
-      familyId,
-      createdById,
-      code,
-      expiresAt,
-      maxUses: uses == null || !Number.isFinite(uses) ? null : Math.max(Math.trunc(uses), 1),
-    },
-  });
+    return await prisma.familyInvite.create({
+      data: {
+        familyId,
+        createdById,
+        code,
+        expiresAt,
+        maxUses: uses == null || !Number.isFinite(uses) ? null : Math.max(Math.trunc(uses), 1),
+      },
+    });
+  } catch (error) {
+    if (!inviteStorageUnavailable(error)) throw error;
+    return createLegacyFamilyInvite({ familyId, createdById });
+  }
 }
 
 export async function listFamilyInvites(familyId) {
-  return prisma.familyInvite.findMany({
-    where: { familyId },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-  });
+  try {
+    return await prisma.familyInvite.findMany({
+      where: { familyId },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+  } catch (error) {
+    if (!inviteStorageUnavailable(error)) throw error;
+    const family = await prisma.family.findUnique({ where: { id: familyId } });
+    return family ? [legacyInvite(family, family.ownerId)] : [];
+  }
 }
 
 export async function revokeFamilyInvite({ familyId, inviteId }) {
-  const invite = await prisma.familyInvite.findFirst({ where: { id: inviteId, familyId } });
-  if (!invite) throw createError(404, "Invitation not found", "NOT_FOUND");
-  return prisma.familyInvite.update({ where: { id: invite.id }, data: { revokedAt: new Date() } });
+  try {
+    const invite = await prisma.familyInvite.findFirst({ where: { id: inviteId, familyId } });
+    if (!invite) throw createError(404, "Invitation not found", "NOT_FOUND");
+    return await prisma.familyInvite.update({ where: { id: invite.id }, data: { revokedAt: new Date() } });
+  } catch (error) {
+    if (!inviteStorageUnavailable(error)) throw error;
+    const family = await prisma.family.update({
+      where: { id: familyId },
+      data: { inviteCode: randomBytes(8).toString("hex").toUpperCase() },
+    });
+    return legacyInvite(family, family.ownerId, { id: inviteId, revokedAt: new Date() });
+  }
 }
 
 function ensureInviteUsable(invite) {
@@ -89,7 +143,12 @@ function ensureInviteUsable(invite) {
 
 export async function joinFamily({ inviteCode, userId }) {
   const normalized = String(inviteCode || "").trim().toUpperCase();
-  let invite = await prisma.familyInvite.findUnique({ where: { code: normalized } });
+  let invite = null;
+  try {
+    invite = await prisma.familyInvite.findUnique({ where: { code: normalized } });
+  } catch (error) {
+    if (!inviteStorageUnavailable(error)) throw error;
+  }
   let family;
 
   if (invite) {
