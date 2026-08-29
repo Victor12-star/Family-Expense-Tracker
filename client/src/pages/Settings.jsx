@@ -26,7 +26,7 @@ import { getAccessibilitySettings, setAccessibilitySetting } from "../utils/acce
 
 const SOUND_KEY = "fet_reminder_sound";
 const THEME_KEY = "fet_theme";
-const SUPPORT_EMAIL = String(import.meta.env.VITE_SUPPORT_EMAIL || "victorwisdom39@yahoo.com").trim();
+const SUPPORT_EMAIL = String(import.meta.env.VITE_SUPPORT_EMAIL || "support@example.com").trim();
 const sections = [
   ["account", UserRound, "Account"],
   ["preferences", SlidersHorizontal, "Preferences"],
