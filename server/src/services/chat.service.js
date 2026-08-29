@@ -24,7 +24,7 @@ async function listLegacyMessages(familyId, limit) {
     familyId: row.familyId,
     userId: row.userId,
     message: row.message,
-    isVoice: false,
+    isVoice: typeof row.message === "string" && row.message.startsWith("data:audio/"),
     duration: 0,
     replyToId: null,
     deletedAt: null,
@@ -84,7 +84,9 @@ export async function createMessage({ userId, familyId, message, isVoice, durati
     const user = await prisma.user.findUnique({ where: { id: userId }, select: userSelect });
     return {
       id, familyId, userId, message, createdAt, user,
-      isVoice: false, duration: 0, replyToId: null, deletedAt: null, replyTo: null,
+      isVoice: isVoice === true || message.startsWith("data:audio/"),
+      duration: Math.max(0, Number(duration) || 0),
+      replyToId: null, deletedAt: null, replyTo: null,
     };
   }
 }
