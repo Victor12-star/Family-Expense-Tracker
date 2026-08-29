@@ -47,9 +47,9 @@ export default function Navbar() {
             </NavLink>
           ))}
         </nav>
-        <span className="avatar" aria-label={user?.name ? `Logged in as ${user.name}` : "User"}>
+        <Link to="/settings" className="avatar" aria-label={user?.name ? `Open settings for ${user.name}` : "Open settings"}>
           {user?.name?.[0]?.toUpperCase() || "U"}
-        </span>
+        </Link>
       </div>
     </header>
   );

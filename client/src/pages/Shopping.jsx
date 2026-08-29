@@ -2,10 +2,8 @@ import {
   Check,
   CircleDollarSign,
   History,
-  Package,
   Plus,
   ShoppingBasket,
-  Store,
   Trash2,
   Wallet,
   X,
@@ -17,8 +15,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -43,7 +39,20 @@ const SHOPPING_CATEGORIES = [
 ];
 
 const UNITS = ["piece", "pack", "kg", "g", "litre", "ml", "other"];
-const CHART_COLORS = ["#4f46e5", "#2563eb", "#0891b2", "#059669", "#d97706", "#9333ea"];
+const CHART_COLORS = [
+  "#c7b91f",
+  "#6fa7d8",
+  "#4168ad",
+  "#e85d78",
+  "#f26b21",
+  "#7c5aad",
+  "#469b99",
+  "#e3a72f",
+  "#2d8bc4",
+  "#8f63c9",
+  "#dc567f",
+  "#42a76d",
+];
 
 const initialItem = () => ({
   name: "",
@@ -210,15 +219,6 @@ export default function Shopping() {
       }));
   }, [history]);
 
-  const categoryData = useMemo(() => {
-    const grouped = new Map();
-    history.flatMap((trip) => trip.items || []).forEach((item) => {
-      const total = Number(item.quantity || 1) * Number(item.estimatedUnitPrice || 0);
-      grouped.set(item.category || "Other", (grouped.get(item.category || "Other") || 0) + total);
-    });
-    return [...grouped.entries()].map(([name, value]) => ({ name, value }));
-  }, [history]);
-
   return (
     <div className="page shopping-page">
       <div className="page-head modern-head">
@@ -255,7 +255,7 @@ export default function Shopping() {
         </div>
 
         {items.length === 0 ? (
-          <div className="empty-state"><div className="empty-icon"><ShoppingBasket size={28} /></div><h3>Your shopping list is empty</h3><p>Add the things you need and keep track of your estimated spending as you shop.</p><button className="btn secondary" type="button" onClick={() => setShowAdd(true)}><Plus size={17} /> Add first item</button></div>
+          <div className="empty-state"><div className="empty-icon"><ShoppingBasket size={28} /></div><h3>Your shopping list is empty</h3><p>Add items to estimate the cost of your next trip.</p><button className="btn secondary" type="button" onClick={() => setShowAdd(true)}><Plus size={17} /> Add first item</button></div>
         ) : (
           <div className="shopping-items">
             {items.map((item) => {
@@ -280,35 +280,21 @@ export default function Shopping() {
         )}
       </section>
 
-      <section className="analytics-grid">
-        <article className="card chart-card">
-          <div className="card-head"><div><span className="eyebrow">History</span><h2>Shopping spending</h2></div></div>
+      <section className="analytics-grid spending-chart-section">
+        <article className="card chart-card spending-chart-card">
+          <div className="card-head"><div><span className="eyebrow">History</span><h2>Shopping spending</h2><p className="chart-subtitle">Completed shopping totals by month</p></div></div>
           {monthlyChartData.length === 0 ? <p className="empty chart-empty">Complete a shopping trip to start building your spending chart.</p> : (
-            <div className="chart-wrap" aria-label="Monthly shopping spending chart">
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={monthlyChartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => money(value, currency)} />
-                  <Bar dataKey="amount" fill="#4f46e5" radius={[8, 8, 0, 0]} />
+            <div className="chart-wrap shopping-bar-chart" role="img" aria-label="Bar chart showing completed shopping totals by month">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyChartData} margin={{ top: 16, right: 12, left: 4, bottom: 4 }} barCategoryGap="24%">
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="2 6" vertical={false} />
+                  <XAxis dataKey="month" axisLine={{ stroke: "var(--border-strong)" }} tickLine={false} tick={{ fill: "var(--muted)", fontSize: 12, fontWeight: 650 }} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} width={64} tick={{ fill: "var(--muted)", fontSize: 11 }} tickFormatter={(value) => Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(value)} />
+                  <Tooltip cursor={{ fill: "rgba(79, 70, 229, 0.05)" }} formatter={(value) => [money(value, currency), "Spent"]} contentStyle={{ border: "1px solid var(--border)", borderRadius: 12, background: "var(--panel)", boxShadow: "0 12px 28px rgba(15, 23, 42, .12)" }} labelStyle={{ color: "var(--text)", fontWeight: 700 }} />
+                  <Bar dataKey="amount" radius={[9, 9, 2, 2]} maxBarSize={62}>
+                    {monthlyChartData.map((entry, index) => <Cell key={`${entry.month}-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
+                  </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </article>
-
-        <article className="card chart-card">
-          <div className="card-head"><div><span className="eyebrow">Categories</span><h2>Estimated category mix</h2></div></div>
-          {categoryData.length === 0 ? <p className="empty chart-empty">Category insights will appear after completed shopping trips.</p> : (
-            <div className="chart-wrap donut-wrap">
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={92} paddingAngle={3}>
-                    {categoryData.map((entry, index) => <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={(value) => money(value, currency)} />
-                </PieChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -349,7 +335,7 @@ export default function Shopping() {
       )}
 
       {showComplete && (
-        <div className="modal-layer"><form className="modal-card" onSubmit={completeTrip}><div className="drawer-head"><div><span className="eyebrow">Finish trip</span><h2>Complete shopping</h2></div><button className="icon-btn" type="button" onClick={() => setShowComplete(false)}><X size={20} /></button></div><div className="completion-comparison"><span>Estimated total<strong>{money(summary.estimatedTotal || 0, currency)}</strong></span></div><label className="field"><span>Actual amount paid ({currency})</span><input type="number" min="0" step="0.01" value={actualTotal} onChange={(e) => setActualTotal(e.target.value)} required autoFocus /></label>{actualTotal !== "" && <p className="form-note">Difference: {money(Number(actualTotal) - Number(summary.estimatedTotal || 0), currency)}</p>}<p className="form-note">Completing this trip creates one expense and updates the monthly budget automatically.</p><div className="drawer-actions"><button className="btn ghost" type="button" onClick={() => setShowComplete(false)}>Cancel</button><button className="btn primary" type="submit" disabled={loading}>Complete & add expense</button></div></form></div>
+        <div className="modal-layer"><form className="modal-card" onSubmit={completeTrip}><div className="drawer-head"><div><span className="eyebrow">Finish trip</span><h2>Complete shopping</h2></div><button className="icon-btn" type="button" onClick={() => setShowComplete(false)} aria-label="Close"><X size={20} /></button></div><div className="completion-comparison"><span>Estimated total<strong>{money(summary.estimatedTotal || 0, currency)}</strong></span></div><label className="field"><span>Actual amount paid ({currency})</span><input type="number" min="0" step="0.01" value={actualTotal} onChange={(e) => setActualTotal(e.target.value)} required autoFocus /></label>{actualTotal !== "" && <p className="form-note">Difference: {money(Number(actualTotal) - Number(summary.estimatedTotal || 0), currency)}</p>}<div className="drawer-actions"><button className="btn ghost" type="button" onClick={() => setShowComplete(false)}>Cancel</button><button className="btn primary" type="submit" disabled={loading}>Complete & add expense</button></div></form></div>
       )}
     </div>
   );

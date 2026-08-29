@@ -308,7 +308,7 @@ export default function Calendar() {
                   <option value="YEARLY">Yearly</option>
                 </select>
               </label>
-              <p className="form-note"><Bell size={15} /> Sound/browser alerts work while the app is open. Closed-app push reminders will use the Service Worker notification phase.</p>
+              <p className="form-note"><Bell size={15} /> Keep the app open for sound alerts.</p>
               <div className="drawer-actions">
                 <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>Cancel</button>
                 <button className="btn primary" type="submit" disabled={saving}><Plus size={17} /> {saving ? "Adding…" : "Add reminder"}</button>
