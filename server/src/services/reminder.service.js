@@ -4,7 +4,18 @@ import { createError } from "../utils/apiError.js";
 import { authorizeOwnedScopedRecord, resolveScope } from "./scope.service.js";
 
 function reminderStorageNeedsRepair(error) {
-  return error?.code === "P2021" || error?.code === "P2022";
+  return error?.code === "P2011" || error?.code === "P2021" || error?.code === "P2022";
+}
+
+async function repairReminderStorage() {
+  // Static, parameter-free DDL provides a final safety net when a production
+  // host starts the app before running the latest Prisma migration.
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ALTER COLUMN "familyId" DROP NOT NULL`;
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ADD COLUMN IF NOT EXISTS "category" TEXT NOT NULL DEFAULT 'Other'`;
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ADD COLUMN IF NOT EXISTS "remindBeforeMinutes" INTEGER NOT NULL DEFAULT 0`;
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ADD COLUMN IF NOT EXISTS "sound" TEXT NOT NULL DEFAULT 'soft'`;
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`;
+  await prisma.$executeRaw`ALTER TABLE "Reminder" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`;
 }
 
 function normalizeLegacyReminder(row) {
@@ -62,7 +73,13 @@ export async function createScopedReminder({ userId, view, familyId, data }) {
   try {
     return await prisma.reminder.create({ data: reminderData });
   } catch (error) {
-    if (!reminderStorageNeedsRepair(error) || !scope.familyId) throw error;
+    if (!reminderStorageNeedsRepair(error)) throw error;
+    await repairReminderStorage();
+    try {
+      return await prisma.reminder.create({ data: reminderData });
+    } catch (retryError) {
+      if (!scope.familyId || !reminderStorageNeedsRepair(retryError)) throw retryError;
+    }
     const id = randomUUID();
     await prisma.$executeRaw`
       INSERT INTO "Reminder" ("id", "familyId", "userId", "title", "date", "time", "repeat", "type", "notified")
