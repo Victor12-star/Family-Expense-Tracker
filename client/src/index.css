@@ -1857,6 +1857,7 @@ button:disabled {
   bottom: -140px;
   border: 34px solid rgba(255,255,255,.08);
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .dashboard-welcome,
@@ -4175,6 +4176,9 @@ html.dark .chat-msg.me .chat-bubble {
 
 .dashboard-hero-actions {
   gap: 10px;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
 }
 
 .language-switch {
@@ -4185,6 +4189,7 @@ html.dark .chat-msg.me .chat-bubble {
   border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   color: var(--muted);
+  background: rgba(255, 255, 255, .96);
 }
 
 .language-switch select {
@@ -4195,7 +4200,7 @@ html.dark .chat-msg.me .chat-bubble {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: #334155;
   font: inherit;
   font-size: 12px;
   font-weight: 700;
