@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { api, setTokens, clearTokens, getRefreshToken, refreshSession } from "../api/client.js";
+import { api, setTokens, clearTokens, getRefreshToken, isSessionRejected, refreshSession } from "../api/client.js";
 
 const AuthContext = createContext(null);
 const USER_KEY = "fet_user";
@@ -34,11 +34,14 @@ export function AuthProvider({ children }) {
         const data = await refreshSession();
         setUser(data.user);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-      } catch (_) {
-        // Refresh failed — clear tokens and sign out
-        clearTokens();
-        setUser(null);
-        localStorage.removeItem(USER_KEY);
+      } catch (error) {
+        // Keep the locally restored session during temporary connection or
+        // server-startup failures. A later API request can retry the refresh.
+        if (isSessionRejected(error)) {
+          clearTokens();
+          setUser(null);
+          localStorage.removeItem(USER_KEY);
+        }
       } finally {
         setLoading(false);
       }
