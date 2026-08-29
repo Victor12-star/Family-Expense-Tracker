@@ -125,7 +125,7 @@ export default function Dashboard() {
         </div>
         <div className="dashboard-hero-actions">
           <LanguageSwitch />
-          <Link to="/expenses" className="btn primary hero-add">
+          <Link to="/expenses?add=1" className="btn primary hero-add">
             <Plus size={18} aria-hidden="true" />
             {t("addExpense", "Add expense")}
           </Link>
