@@ -1744,6 +1744,15 @@ button:disabled {
   gap: 10px;
 }
 
+.desktop-home-link {
+  flex: 0 0 auto;
+}
+
+.navbar-view-toggle {
+  display: flex;
+  flex: 0 0 auto;
+}
+
 .avatar {
   width: 34px;
   height: 34px;
@@ -2279,6 +2288,14 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  .desktop-home-link {
+    display: none;
+  }
+
+  .navbar-inner .navbar-view-toggle {
+    display: none;
+  }
+
   .nav-links {
     display: none;
   }
