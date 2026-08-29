@@ -33,6 +33,7 @@ export default function Login() {
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
+        <div className="auth-app-name">Family Expense Tracker</div>
         <h1>{t("signIn", "Sign in")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}

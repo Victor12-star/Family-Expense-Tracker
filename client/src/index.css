@@ -3230,6 +3230,15 @@ button:disabled {
   filter: drop-shadow(0 12px 18px rgba(37, 99, 235, 0.18));
 }
 
+.auth-app-name {
+  margin: -4px 0 4px;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
 .nav-logo-img {
   object-fit: contain;
   border-radius: 0;

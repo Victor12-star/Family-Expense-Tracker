@@ -56,6 +56,7 @@ export default function Register() {
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
+        <div className="auth-app-name">Family Expense Tracker</div>
         <h1>{t("createAccount", "Create account")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
