@@ -17,6 +17,7 @@ import { useFamily } from "../context/FamilyContext.jsx";
 import { api } from "../api/client.js";
 import { todayISO } from "../utils/format.js";
 import { playReminderChime } from "../utils/reminderAudio.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const SOUND_KEY = "fet_reminder_sound";
 const initialForm = () => ({
@@ -41,6 +42,7 @@ function parseTimeParts(value = "12:00:00") {
 
 export default function Calendar() {
   const { family, view } = useFamily();
+  const { t, locale } = useLanguage();
   const [reminders, setReminders] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [showForm, setShowForm] = useState(false);
@@ -155,12 +157,11 @@ export default function Calendar() {
     <div className="page calendar-page">
       <div className="page-head modern-head">
         <div>
-          <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
-          <h1>Calendar & reminders</h1>
-          <p className="subtitle">Keep bills, appointments and important dates in view.</p>
+          <h1>{t("calendarReminders", "Calendar & reminders")}</h1>
+          <p className="subtitle">{t("calendarSubtitle", "Keep bills, appointments and important dates in view.")}</p>
         </div>
         <button className="btn primary" type="button" onClick={() => { setFormError(""); setShowForm(true); }}>
-          <Plus size={18} /> Add reminder
+          <Plus size={18} /> {t("addReminder", "Add reminder")}
         </button>
       </div>
 
@@ -170,7 +171,7 @@ export default function Calendar() {
         <div className="reminder-sound-control">
           <Volume2 size={18} />
           <label>
-            <span>Reminder sound</span>
+            <span>{t("reminderSound", "Reminder sound")}</span>
             <select value={sound} onChange={(e) => { setSound(e.target.value); localStorage.setItem(SOUND_KEY, e.target.value); }}>
               <option value="soft">Soft chime</option>
               <option value="bell">Gentle bell</option>
@@ -182,10 +183,10 @@ export default function Calendar() {
             const played = await playReminderChime(sound);
             setNotice(played ? "Sound is enabled." : "Your browser blocked sound. Click the page once and try Preview again.");
             window.setTimeout(() => setNotice(""), 4000);
-          }}>Preview</button>
+          }}>{t("preview", "Preview")}</button>
         </div>
         <button className="btn ghost" type="button" onClick={requestNotifications}>
-          <Bell size={17} /> Browser notifications
+          <Bell size={17} /> {t("browserNotifications", "Browser notifications")}
         </button>
       </section>
 
@@ -193,12 +194,12 @@ export default function Calendar() {
         <section className="card calendar-card">
           <div className="calendar-head">
             <div>
-              <span className="eyebrow">Monthly view</span>
-              <h2>{displayMonth.toLocaleDateString([], { month: "long", year: "numeric" })}</h2>
+              <span className="eyebrow">{t("monthlyView", "Monthly view")}</span>
+              <h2>{displayMonth.toLocaleDateString(locale, { month: "long", year: "numeric" })}</h2>
             </div>
             <div className="calendar-nav">
               <button className="icon-btn" type="button" aria-label="Previous month" onClick={() => setDisplayMonth((date) => new Date(date.getFullYear(), date.getMonth() - 1, 1))}><ChevronLeft size={20} /></button>
-              <button className="btn ghost" type="button" onClick={() => setDisplayMonth(new Date())}>Today</button>
+              <button className="btn ghost" type="button" onClick={() => setDisplayMonth(new Date())}>{t("today", "Today")}</button>
               <button className="icon-btn" type="button" aria-label="Next month" onClick={() => setDisplayMonth((date) => new Date(date.getFullYear(), date.getMonth() + 1, 1))}><ChevronRight size={20} /></button>
             </div>
           </div>
@@ -230,12 +231,11 @@ export default function Calendar() {
         <section className="card upcoming-card">
           <div className="card-head">
             <div>
-              <span className="eyebrow">Next up</span>
-              <h2>Upcoming reminders</h2>
+              <h2>{t("upcomingReminders", "Upcoming reminders")}</h2>
             </div>
             {reminders.length > 0 && (
               <button className="btn ghost compact-danger" type="button" onClick={clearMine}>
-                <Trash2 size={16} /> Clear reminders
+                <Trash2 size={16} /> {t("clearReminders", "Clear reminders")}
               </button>
             )}
           </div>
@@ -243,9 +243,8 @@ export default function Calendar() {
           {upcoming.length === 0 ? (
             <div className="empty-state compact-empty">
               <div className="empty-icon"><BellRing size={27} /></div>
-              <h3>No upcoming reminders</h3>
-              <p>You're all caught up. Add a reminder so you don't miss an important payment or event.</p>
-              <button className="btn secondary" type="button" onClick={() => setShowForm(true)}><Plus size={17} /> Add reminder</button>
+              <h3>{t("noUpcomingReminders", "No upcoming reminders")}</h3>
+              <button className="btn secondary" type="button" onClick={() => setShowForm(true)}><Plus size={17} /> {t("addReminder", "Add reminder")}</button>
             </div>
           ) : upcoming.map((reminder) => (
             <article className="reminder-row" key={reminder.id}>
@@ -265,31 +264,31 @@ export default function Calendar() {
         <div className="drawer-layer" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="add-reminder-title">
             <div className="drawer-head">
-              <div><span className="eyebrow">Schedule</span><h2 id="add-reminder-title">Add reminder</h2></div>
+              <div><span className="eyebrow">{t("schedule", "Schedule")}</span><h2 id="add-reminder-title">{t("addReminder", "Add reminder")}</h2></div>
               <button className="icon-btn" type="button" onClick={() => setShowForm(false)} aria-label="Close"><X size={20} /></button>
             </div>
             <form className="drawer-form" onSubmit={submit}>
               {formError && <div className="error-banner" role="alert">{formError}</div>}
-              <label className="field"><span>Title</span><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Electricity bill" required autoFocus /></label>
-              <label className="field"><span>Date</span><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></label>
+              <label className="field"><span>{t("title", "Title")}</span><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Electricity bill" required autoFocus /></label>
+              <label className="field"><span>{t("date", "Date")}</span><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></label>
               <fieldset className="time-fieldset">
                 <legend><Clock3 size={16} /> Time</legend>
                 <div className="time-parts">
-                  <label><span>Hour</span><input type="number" min="0" max="23" value={form.hour} onChange={(e) => setForm({ ...form, hour: String(Math.max(0, Math.min(23, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
+                  <label><span>{t("hour", "Hour")}</span><input type="number" min="0" max="23" value={form.hour} onChange={(e) => setForm({ ...form, hour: String(Math.max(0, Math.min(23, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
                   <b>:</b>
-                  <label><span>Minute</span><input type="number" min="0" max="59" value={form.minute} onChange={(e) => setForm({ ...form, minute: String(Math.max(0, Math.min(59, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
+                  <label><span>{t("minute", "Minute")}</span><input type="number" min="0" max="59" value={form.minute} onChange={(e) => setForm({ ...form, minute: String(Math.max(0, Math.min(59, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
                   <b>:</b>
-                  <label><span>Second</span><input type="number" min="0" max="59" value={form.second} onChange={(e) => setForm({ ...form, second: String(Math.max(0, Math.min(59, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
+                  <label><span>{t("second", "Second")}</span><input type="number" min="0" max="59" value={form.second} onChange={(e) => setForm({ ...form, second: String(Math.max(0, Math.min(59, Number(e.target.value || 0)))).padStart(2, "0") })} /></label>
                 </div>
               </fieldset>
-              <label className="field"><span>Category</span>
+              <label className="field"><span>{t("category", "Category")}</span>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                   <option>Bills</option><option>Groceries</option><option>Shopping</option><option>Food & Dining</option>
                   <option>Rent</option><option>Subscription</option><option>School</option><option>Transport</option>
                   <option>Appointment</option><option>Family</option><option>Birthday</option><option>Work</option><option>Other</option>
                 </select>
               </label>
-              <label className="field"><span>Remind me</span>
+              <label className="field"><span>{t("remindMe", "Remind me")}</span>
                 <select value={form.remindBeforeMinutes} onChange={(e) => setForm({ ...form, remindBeforeMinutes: e.target.value })}>
                   <option value="0">At event time</option>
                   <option value="5">5 minutes before</option>
@@ -299,19 +298,19 @@ export default function Calendar() {
                   <option value="1440">1 day before</option>
                 </select>
               </label>
-              <label className="field"><span>Repeat</span>
+              <label className="field"><span>{t("repeat", "Repeat")}</span>
                 <select value={form.repeat} onChange={(e) => setForm({ ...form, repeat: e.target.value })}>
-                  <option value="NONE">Never</option>
-                  <option value="DAILY">Daily</option>
-                  <option value="WEEKLY">Weekly</option>
-                  <option value="MONTHLY">Monthly</option>
-                  <option value="YEARLY">Yearly</option>
+                  <option value="NONE">{t("never", "Never")}</option>
+                  <option value="DAILY">{t("daily", "Daily")}</option>
+                  <option value="WEEKLY">{t("weekly", "Weekly")}</option>
+                  <option value="MONTHLY">{t("monthly", "Monthly")}</option>
+                  <option value="YEARLY">{t("yearly", "Yearly")}</option>
                 </select>
               </label>
               <p className="form-note"><Bell size={15} /> Keep the app open for sound alerts.</p>
               <div className="drawer-actions">
-                <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>Cancel</button>
-                <button className="btn primary" type="submit" disabled={saving}><Plus size={17} /> {saving ? "Adding…" : "Add reminder"}</button>
+                <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>{t("cancel", "Cancel")}</button>
+                <button className="btn primary" type="submit" disabled={saving}><Plus size={17} /> {saving ? t("loading", "Loading…") : t("addReminder", "Add reminder")}</button>
               </div>
             </form>
           </aside>

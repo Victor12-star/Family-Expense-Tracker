@@ -24,6 +24,7 @@ import { useFamily } from "../context/FamilyContext.jsx";
 import { useCurrency } from "../context/CurrencyContext.jsx";
 import { api } from "../api/client.js";
 import { currentMonth, money } from "../utils/format.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const SHOPPING_CATEGORIES = [
   "Groceries",
@@ -67,6 +68,7 @@ const initialItem = () => ({
 export default function Shopping() {
   const { family, view } = useFamily();
   const { currency } = useCurrency();
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [budget, setBudget] = useState(null);
@@ -223,11 +225,10 @@ export default function Shopping() {
     <div className="page shopping-page">
       <div className="page-head modern-head">
         <div>
-          <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
-          <h1>Shopping</h1>
-          <p className="subtitle">Plan purchases, understand the cost, and keep your monthly budget in view.</p>
+          <h1>{t("shopping", "Shopping")}</h1>
+          <p className="subtitle">{t("shoppingSubtitle", "Plan purchases, understand the cost, and keep your monthly budget in view.")}</p>
         </div>
-        <button className="btn primary" type="button" onClick={() => setShowAdd(true)}><Plus size={18} /> Add item</button>
+        <button className="btn primary" type="button" onClick={() => setShowAdd(true)}><Plus size={18} /> {t("addItem", "Add item")}</button>
       </div>
 
       <section className="shopping-summary-grid">
@@ -247,7 +248,7 @@ export default function Shopping() {
 
       <section className="card shopping-list-card">
         <div className="card-head">
-          <div><span className="eyebrow">Current trip</span><h2>Shopping list</h2></div>
+          <div><h2>{t("shoppingList", "Shopping list")}</h2></div>
           <div className="card-actions">
             {summary.purchasedCount > 0 && <button className="btn ghost" type="button" onClick={clearPurchased}>Clear purchased</button>}
             {items.length > 0 && <button className="btn ghost compact-danger" type="button" onClick={clearList}><Trash2 size={16} /> Clear list</button>}
@@ -255,7 +256,7 @@ export default function Shopping() {
         </div>
 
         {items.length === 0 ? (
-          <div className="empty-state"><div className="empty-icon"><ShoppingBasket size={28} /></div><h3>Your shopping list is empty</h3><p>Add items to estimate the cost of your next trip.</p><button className="btn secondary" type="button" onClick={() => setShowAdd(true)}><Plus size={17} /> Add first item</button></div>
+          <div className="empty-state"><div className="empty-icon"><ShoppingBasket size={28} /></div><h3>{t("shoppingListEmpty", "Your shopping list is empty")}</h3><p>Add items to estimate the cost of your next trip.</p><button className="btn secondary" type="button" onClick={() => setShowAdd(true)}><Plus size={17} /> {t("addFirstItem", "Add first item")}</button></div>
         ) : (
           <div className="shopping-items">
             {items.map((item) => {
@@ -282,7 +283,7 @@ export default function Shopping() {
 
       <section className="analytics-grid spending-chart-section">
         <article className="card chart-card spending-chart-card">
-          <div className="card-head"><div><span className="eyebrow">History</span><h2>Shopping spending</h2><p className="chart-subtitle">Completed shopping totals by month</p></div></div>
+          <div className="card-head"><div><h2>{t("shoppingSpending", "Shopping spending")}</h2><p className="chart-subtitle">Completed shopping totals by month</p></div></div>
           {monthlyChartData.length === 0 ? <p className="empty chart-empty">Complete a shopping trip to start building your spending chart.</p> : (
             <div className="chart-wrap shopping-bar-chart" role="img" aria-label="Bar chart showing completed shopping totals by month">
               <ResponsiveContainer width="100%" height={300}>
@@ -302,7 +303,7 @@ export default function Shopping() {
       </section>
 
       <section className="card history-card">
-        <div className="card-head"><div><span className="eyebrow">Completed trips</span><h2>Shopping history</h2></div><History size={20} /></div>
+        <div className="card-head"><div><h2>{t("shoppingHistory", "Shopping history")}</h2></div><History size={20} /></div>
         {history.length === 0 ? <p className="empty">No completed shopping trips yet.</p> : history.slice(0, 8).map((trip) => (
           <article className="history-row" key={trip.id}><div><strong>{trip.store || "Shopping trip"}</strong><span>{trip.completedAt ? new Date(trip.completedAt).toLocaleDateString() : ""} · {trip.items?.length || 0} items</span></div><div className="history-amount"><strong>{money(trip.actualTotal || 0, trip.currency || currency)}</strong><small>Est. {money(trip.estimatedTotal || 0, trip.currency || currency)}</small></div></article>
         ))}

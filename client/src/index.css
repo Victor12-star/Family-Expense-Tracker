@@ -1591,15 +1591,15 @@ html {
 
 html.dark {
   color-scheme: dark;
-  --bg-top: #0b1020;
-  --bg-mid: #11182c;
-  --bg-bottom: #101827;
-  --panel: #151d30;
-  --panel-strong: #1b253a;
-  --border: #29354b;
+  --bg-top: #020617;
+  --bg-mid: #050b16;
+  --bg-bottom: #080f1d;
+  --panel: #0b1220;
+  --panel-strong: #111a2b;
+  --border: #263247;
   --text: #f4f7fb;
-  --muted: #a8b4c8;
-  --shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  --muted: #aab6ca;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
 }
 
 body {
@@ -3552,11 +3552,13 @@ button:disabled {
   align-items: center;
   gap: 8px;
   color: #fff;
-  background: var(--danger);
+  background: #111827;
+  border-color: #111827;
 }
 
 .settings-logout:hover {
-  filter: brightness(.94);
+  background: #000;
+  border-color: #000;
 }
 
 .settings-link-card {
@@ -4037,5 +4039,153 @@ button:disabled {
 @media (max-width: 380px) {
   .settings-nav {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.calendar-page > .modern-head h1 {
+  font-size: clamp(25px, 3vw, 34px);
+}
+
+/* Keep unchecked accessibility switches visible in every colour theme. */
+.settings-panel .toggle {
+  flex: 0 0 44px;
+  border: 1px solid #94a3b8;
+  background: #cbd5e1;
+}
+
+.settings-panel .toggle:checked {
+  border-color: #16a34a;
+  background: #22c55e;
+}
+
+html.dark .settings-panel .toggle {
+  border-color: #64748b;
+  background: #334155;
+}
+
+html.dark .settings-panel .toggle:checked {
+  border-color: #4ade80;
+  background: #16a34a;
+}
+
+/* Larger text uses explicit sizes because much of the interface is sized in px. */
+html.a11y-large p,
+html.a11y-large label,
+html.a11y-large a,
+html.a11y-large button,
+html.a11y-large input,
+html.a11y-large select,
+html.a11y-large textarea,
+html.a11y-large output,
+html.a11y-large .list-copy,
+html.a11y-large .member-name,
+html.a11y-large .settings-control-row {
+  font-size: 17px !important;
+  line-height: 1.5;
+}
+
+html.a11y-large small,
+html.a11y-large .subtitle,
+html.a11y-large .eyebrow,
+html.a11y-large .stat-note,
+html.a11y-large .settings-status {
+  font-size: 15px !important;
+}
+
+html.a11y-large h1 {
+  font-size: clamp(34px, 5vw, 46px) !important;
+}
+
+html.a11y-large h2 {
+  font-size: clamp(23px, 3.5vw, 30px) !important;
+}
+
+html.a11y-large h3,
+html.a11y-large strong {
+  font-size: 18px;
+}
+
+/* Dark mode applies to the primary content surfaces, not only the page backdrop. */
+html.dark .card,
+html.dark .mini-stat,
+html.dark .stat,
+html.dark .qa,
+html.dark .chat-card,
+html.dark .chat-sidebar,
+html.dark .chat-bubble,
+html.dark .family-choice-card,
+html.dark .settings-panel,
+html.dark .settings-nav {
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+html.dark .chat-window,
+html.dark .chat-input {
+  border-color: var(--border);
+  background: #050b16;
+  color: var(--text);
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea,
+html.dark .chat-input input,
+html.dark .chat-tool-btn {
+  border-color: var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+html.dark .chat-msg.me .chat-bubble {
+  border-color: #1d4ed8;
+  background: #172554;
+  color: #dbeafe;
+}
+
+.dashboard-hero-actions,
+.language-switch {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-hero-actions {
+  gap: 10px;
+}
+
+.language-switch {
+  gap: 3px;
+  min-height: 42px;
+  padding: 4px 5px 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  color: var(--muted);
+}
+
+.language-switch button {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.language-switch button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .dashboard-hero-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }

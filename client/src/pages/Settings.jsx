@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   FileText,
   Info,
-  LogOut,
   Mail,
   Scale,
   ShieldCheck,
@@ -23,6 +22,7 @@ import { useCurrency } from "../context/CurrencyContext.jsx";
 import { CURRENCIES, CURRENCY_CODES } from "../utils/constants.js";
 import { playReminderChime } from "../utils/reminderAudio.js";
 import { getAccessibilitySettings, setAccessibilitySetting } from "../utils/accessibility.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const SOUND_KEY = "fet_reminder_sound";
 const THEME_KEY = "fet_theme";
@@ -58,12 +58,15 @@ function readTheme() {
 
 function applyTheme(theme) {
   const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
-  document.documentElement.classList.toggle("light", theme === "light" || (theme === "system" && prefersLight));
+  const useLight = theme === "light" || (theme === "system" && prefersLight);
+  document.documentElement.classList.toggle("light", useLight);
+  document.documentElement.classList.toggle("dark", !useLight);
 }
 
 export default function Settings() {
   const { user, logout } = useAuth();
   const { currency, changeCurrency } = useCurrency();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState(null);
   const [theme, setTheme] = useState(readTheme);
@@ -112,8 +115,7 @@ export default function Settings() {
   return (
     <div className="page settings-page">
       <div className="modern-head settings-head">
-        <h1>Settings</h1>
-        <p>Manage your account and app preferences.</p>
+        <h1>{t("settings", "Settings")}</h1>
       </div>
       {notice && <div className="success-banner settings-notice" role="status">{notice}</div>}
 
@@ -128,7 +130,7 @@ export default function Settings() {
               aria-expanded={activeSection === id}
               aria-controls={activeSection === id ? "settings-detail" : undefined}
             >
-              {label}
+              {t(id === "privacy" ? "privacyData" : id === "about" ? "aboutSupport" : id, label)}
             </button>
           ))}
         </nav>
@@ -137,7 +139,7 @@ export default function Settings() {
           {activeSection === "account" && <AccountPanel user={user} />}
           {activeSection === "preferences" && <PreferencesPanel currency={currency} changeCurrency={changeCurrency} theme={theme} handleThemeChange={handleThemeChange} />}
           {activeSection === "notifications" && <NotificationsPanel status={notificationStatus} requestNotifications={requestNotifications} sound={sound} setSound={setSound} previewSound={previewSound} />}
-          {activeSection === "security" && <SecurityPanel user={user} handleLogout={handleLogout} />}
+          {activeSection === "security" && <SecurityPanel handleLogout={handleLogout} />}
           {activeSection === "privacy" && <PrivacyPanel setLegalPanel={setLegalPanel} />}
           {activeSection === "accessibility" && <AccessibilityPanel a11y={a11y} handleA11yChange={handleA11yChange} />}
           {activeSection === "about" && <AboutPanel setLegalPanel={setLegalPanel} />}
@@ -145,10 +147,10 @@ export default function Settings() {
       </div>
 
       <footer className="settings-footer">
-        <span>Built by <strong>Victor</strong></span>
+        <span>{t("builtBy", "Built by")} <strong>Victor</strong></span>
         {SUPPORT_EMAIL && (
           <a href={`mailto:${SUPPORT_EMAIL}`}>
-            <Mail size={15} aria-hidden="true" /> Contact: {SUPPORT_EMAIL}
+            <Mail size={15} aria-hidden="true" /> {t("contact", "Contact")}: {SUPPORT_EMAIL}
           </a>
         )}
       </footer>
@@ -171,29 +173,36 @@ function PanelHead({ Icon, title }) {
 }
 
 function AccountPanel({ user }) {
-  return <div className="settings-panel"><PanelHead Icon={UserRound} title="Account" /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong><span>{user?.email || "No email available"}</span></div></div></div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={UserRound} title={t("account", "Account")} /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong></div></div></div>;
 }
 
 function PreferencesPanel({ currency, changeCurrency, theme, handleThemeChange }) {
-  return <div className="settings-panel"><PanelHead Icon={SlidersHorizontal} title="Preferences" /><label className="settings-control-row"><strong>Currency</strong><select value={currency} onChange={(event) => changeCurrency(event.target.value)}>{CURRENCY_CODES.map((code) => <option key={code} value={code}>{code} ({CURRENCIES[code]})</option>)}</select></label><label className="settings-control-row"><strong>Theme</strong><select value={theme} onChange={handleThemeChange}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={SlidersHorizontal} title={t("preferences", "Preferences")} /><label className="settings-control-row"><strong>{t("currency", "Currency")}</strong><select value={currency} onChange={(event) => changeCurrency(event.target.value)}>{CURRENCY_CODES.map((code) => <option key={code} value={code}>{code} ({CURRENCIES[code]})</option>)}</select></label><label className="settings-control-row"><strong>{t("theme", "Theme")}</strong><select value={theme} onChange={handleThemeChange}><option value="system">{t("system", "System")}</option><option value="light">{t("light", "Light")}</option><option value="dark">{t("dark", "Dark")}</option></select></label></div>;
 }
 
 function NotificationsPanel({ status, requestNotifications, sound, setSound, previewSound }) {
-  return <div className="settings-panel"><PanelHead Icon={Bell} title="Notifications" /><div className="settings-control-row"><span><strong>Browser notifications</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><strong>Reminder sound</strong><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>Preview</button></div></div></div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={Bell} title={t("notifications", "Notifications")} /><div className="settings-control-row"><span><strong>{t("browserNotifications", "Browser notifications")}</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><strong>{t("reminderSound", "Reminder sound")}</strong><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>{t("preview", "Preview")}</button></div></div></div>;
 }
 
-function SecurityPanel({ user, handleLogout }) {
-  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title="Security" /><div className="settings-control-row"><span><strong>Current session</strong><small>{user?.email}</small></span><span className="status-pill"><CheckCircle2 size={14} /> Active</span></div><div className="settings-control-row"><span><strong>Log out</strong><small>End this session on this device</small></span><button className="btn danger settings-logout" type="button" onClick={handleLogout}><LogOut size={16} /> Log out</button></div></div>;
+function SecurityPanel({ handleLogout }) {
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title={t("security", "Security")} /><div className="settings-control-row"><strong>{t("currentSession", "Current session")}</strong><span className="status-pill"><CheckCircle2 size={14} /> {t("active", "Active")}</span></div><div className="settings-control-row"><strong>{t("logout", "Log out")}</strong><button className="btn settings-logout" type="button" onClick={handleLogout}>{t("logout", "Log out")}</button></div></div>;
 }
 
 function PrivacyPanel({ setLegalPanel }) {
-  return <div className="settings-panel"><PanelHead Icon={FileText} title="Privacy & Data" /><button className="settings-link-card" type="button" onClick={() => setLegalPanel("privacy")}><FileText size={18} /><span><strong>Privacy</strong></span></button><button className="settings-link-card" type="button" onClick={() => setLegalPanel("terms")}><Scale size={18} /><span><strong>Terms of use</strong></span></button></div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={FileText} title={t("privacyData", "Privacy & Data")} /><button className="settings-link-card" type="button" onClick={() => setLegalPanel("privacy")}><FileText size={18} /><span><strong>{t("privacy", "Privacy")}</strong></span></button><button className="settings-link-card" type="button" onClick={() => setLegalPanel("terms")}><Scale size={18} /><span><strong>{t("terms", "Terms of use")}</strong></span></button></div>;
 }
 
 function AccessibilityPanel({ a11y, handleA11yChange }) {
-  return <div className="settings-panel"><PanelHead Icon={Accessibility} title="Accessibility" />{[["largeText", "Larger text"], ["highContrast", "High contrast"], ["reduceMotion", "Reduce motion"]].map(([name, label]) => <label className="settings-control-row" key={name}><strong>{label}</strong><input type="checkbox" className="toggle" checked={a11y[name]} onChange={(event) => handleA11yChange(name, event.target.checked)} /></label>)}</div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={Accessibility} title={t("accessibility", "Accessibility")} />{[["largeText", "largerText", "Larger text"], ["highContrast", "highContrast", "High contrast"], ["reduceMotion", "reduceMotion", "Reduce motion"]].map(([name, key, label]) => <label className="settings-control-row" key={name}><strong>{t(key, label)}</strong><input type="checkbox" className="toggle" checked={a11y[name]} onChange={(event) => handleA11yChange(name, event.target.checked)} /></label>)}</div>;
 }
 
 function AboutPanel({ setLegalPanel }) {
-  return <div className="settings-panel"><PanelHead Icon={Info} title="About" /><div className="settings-control-row"><span><strong>Family Expense Tracker</strong><small>Version 1.0 staging</small></span></div><button className="settings-link-card" type="button" onClick={() => setLegalPanel("licenses")}><Scale size={18} /><span><strong>Open-source licenses</strong></span></button></div>;
+  const { t } = useLanguage();
+  return <div className="settings-panel"><PanelHead Icon={Info} title={t("about", "About")} /><div className="settings-control-row"><span><strong>Family Expense Tracker</strong><small>Version 1.0 staging</small></span></div><button className="settings-link-card" type="button" onClick={() => setLegalPanel("licenses")}><Scale size={18} /><span><strong>{t("licenses", "Open-source licenses")}</strong></span></button></div>;
 }

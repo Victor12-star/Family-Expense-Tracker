@@ -1,4 +1,7 @@
+import { useLanguage } from "../context/LanguageContext.jsx";
+
 export default function ViewToggle({ view, setView }) {
+  const { t } = useLanguage();
   return (
     <div className="view-toggle" role="group" aria-label="Expense workspace">
       <button
@@ -7,7 +10,7 @@ export default function ViewToggle({ view, setView }) {
         onClick={() => setView("family")}
         aria-pressed={view === "family"}
       >
-        Family
+        {t("family", "Family")}
       </button>
       <button
         type="button"
@@ -15,7 +18,7 @@ export default function ViewToggle({ view, setView }) {
         onClick={() => setView("single")}
         aria-pressed={view === "single"}
       >
-        Single
+        {t("single", "Single")}
       </button>
     </div>
   );

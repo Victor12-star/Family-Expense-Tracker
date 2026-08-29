@@ -4,9 +4,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 export default function Login() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,24 +33,24 @@ export default function Login() {
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
-        <h1>Sign in</h1>
+        <h1>{t("signIn", "Sign in")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
 
         <label className="field">
-          <span>Email</span>
+          <span>{t("email", "Email")}</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label className="field">
-          <span>Password</span>
+          <span>{t("password", "Password")}</span>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
 
         <button className="btn primary" disabled={loading}>
-          {loading ? "Signing in…" : "Sign In"}
+          {loading ? t("loading", "Loading…") : t("signIn", "Sign in")}
         </button>
         <p className="auth-links">
-          <Link to="/register">Create account</Link>
+          <Link to="/register">{t("createAccount", "Create account")}</Link>
         </p>
       </form>
     </main>

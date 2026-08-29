@@ -17,6 +17,7 @@ import {
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const EXPIRY_OPTIONS = [
   { label: "1 hour", value: 1 },
@@ -57,6 +58,7 @@ function formatExpiry(invite) {
 
 export default function Family() {
   const { family, loadFamily, refreshFamilies } = useFamily();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [mode, setMode] = useState(null);
   const [familyName, setFamilyName] = useState("");
@@ -203,7 +205,7 @@ export default function Family() {
         <div className="page-head family-page-head">
           <div>
             <span className="eyebrow">Family space</span>
-            <h2>Connect your family</h2>
+            <h2>{t("connectFamily", "Connect your family")}</h2>
             <p className="subtitle">Create a private shared space for expenses, shopping and family conversations.</p>
           </div>
         </div>
@@ -214,12 +216,12 @@ export default function Family() {
           <div className="family-onboarding-grid">
             <button className="family-choice-card" type="button" onClick={() => setMode("create")}>
               <span className="feature-icon"><UsersRound size={24} /></span>
-              <strong>Create a family</strong>
+              <strong>{t("createFamily", "Create a family")}</strong>
               <span>Start a new family space and invite the people you trust.</span>
             </button>
             <button className="family-choice-card" type="button" onClick={() => setMode("join")}>
               <span className="feature-icon"><UserPlus size={24} /></span>
-              <strong>Join a family</strong>
+              <strong>{t("joinFamily", "Join a family")}</strong>
               <span>Use a secure invitation code sent by an existing family owner or admin.</span>
             </button>
           </div>
@@ -229,18 +231,18 @@ export default function Family() {
           <form className="card family-action-card" onSubmit={createFamily}>
             <div className="section-heading">
               <div>
-                <h3>Create a family</h3>
+                <h3>{t("createFamily", "Create a family")}</h3>
                 <p className="subtitle">You will become the owner and can invite members afterwards.</p>
               </div>
               <button className="icon-btn" type="button" onClick={() => setMode(null)} aria-label="Close create family form"><X size={19} /></button>
             </div>
             <label className="field">
-              <span>Family name</span>
+              <span>{t("familyName", "Family name")}</span>
               <input value={familyName} onChange={(event) => setFamilyName(event.target.value)} maxLength={60} placeholder="e.g. The Okon Family" required autoFocus />
             </label>
             <div className="form-actions">
-              <button className="btn secondary" type="button" onClick={() => setMode(null)}>Cancel</button>
-              <button className="btn primary" type="submit" disabled={busy || !familyName.trim()}>{busy ? "Creating…" : "Create family"}</button>
+              <button className="btn secondary" type="button" onClick={() => setMode(null)}>{t("cancel", "Cancel")}</button>
+              <button className="btn primary" type="submit" disabled={busy || !familyName.trim()}>{busy ? t("loading", "Loading…") : t("createFamily", "Create a family")}</button>
             </div>
           </form>
         )}
@@ -249,18 +251,18 @@ export default function Family() {
           <form className="card family-action-card" onSubmit={joinFamily}>
             <div className="section-heading">
               <div>
-                <h3>Join a family</h3>
+                <h3>{t("joinFamily", "Join a family")}</h3>
                 <p className="subtitle">Enter the invitation code exactly as it was shared with you.</p>
               </div>
               <button className="icon-btn" type="button" onClick={() => setMode(null)} aria-label="Close join family form"><X size={19} /></button>
             </div>
             <label className="field">
-              <span>Invite code</span>
+              <span>{t("inviteCode", "Invite code")}</span>
               <input className="invite-entry" value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="e.g. 7H4K9P2M" required autoFocus autoCapitalize="characters" autoComplete="off" />
             </label>
             <div className="form-actions">
-              <button className="btn secondary" type="button" onClick={() => setMode(null)}>Cancel</button>
-              <button className="btn primary" type="submit" disabled={busy || !inviteCode.trim()}>{busy ? "Joining…" : "Join family"}</button>
+              <button className="btn secondary" type="button" onClick={() => setMode(null)}>{t("cancel", "Cancel")}</button>
+              <button className="btn primary" type="submit" disabled={busy || !inviteCode.trim()}>{busy ? t("loading", "Loading…") : t("joinFamily", "Join a family")}</button>
             </div>
           </form>
         )}
@@ -272,17 +274,12 @@ export default function Family() {
     <div className="page family-page">
       <div className="family-hero card">
         <div className="family-identity">
-          <div className="family-avatar" aria-hidden="true">{initials(family.name)}</div>
           <div>
-            <span className="eyebrow">Your family</span>
+            <span className="eyebrow">{t("yourFamily", "Your family")}</span>
             <h2>{family.name}</h2>
-            <p className="subtitle">
-              {family.members?.length || 0} {(family.members?.length || 0) === 1 ? "member" : "members"}
-              {membership?.role ? ` · You are ${membership.role.toLowerCase()}` : ""}
-            </p>
           </div>
         </div>
-        <RouterLink className="btn primary" to="/chat"><MessageCircle size={18} /> Open family chat</RouterLink>
+        <RouterLink className="btn primary" to="/chat"><MessageCircle size={18} /> {t("openFamilyChat", "Open family chat")}</RouterLink>
       </div>
 
       {error && <div className="notice error" role="alert">{error}</div>}
@@ -291,8 +288,7 @@ export default function Family() {
         <section className="card family-panel">
           <div className="section-heading">
             <div>
-              <h3>Members</h3>
-              <p className="subtitle">People who currently have access to this family space.</p>
+              <h3>{t("members", "Members")}</h3>
             </div>
             <span className="count-pill">{family.members?.length || 0}</span>
           </div>
@@ -307,7 +303,6 @@ export default function Family() {
                     <div className="member-avatar">{initials(member.user.name)}</div>
                     <div>
                       <strong>{member.user.name}{isMe ? " (you)" : ""}</strong>
-                      <span>{member.user.email}</span>
                     </div>
                   </div>
                   <div className="member-actions">
@@ -373,7 +368,7 @@ export default function Family() {
 
               <div className="invite-list">
                 {invites.length === 0 ? (
-                  <div className="family-empty-inline"><Link size={21} /><div><strong>No active invitations yet</strong><span>Create a time-limited code or link when you are ready to invite someone.</span></div></div>
+                  <div className="family-empty-inline"><Link size={21} /><div><strong>No active invitations yet</strong></div></div>
                 ) : invites.map((invite) => {
                   const status = inviteStatus(invite);
                   const link = inviteLink(invite);

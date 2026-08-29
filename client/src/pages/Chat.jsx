@@ -8,6 +8,7 @@ import { CheckCheck, Copy, EllipsisVertical, Mic, Plus, Square, Trash2 } from "l
 import { useFamily } from "../context/FamilyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const EMOJIS = [
   "😀", "😂", "😍", "😎", "🤔", "👍", "👏", "🎉", "❤️", "😢",
@@ -20,6 +21,7 @@ const SHORTCUTS = { ":)": "😀", ":(": "😢", ":D": "😁", "<3": "❤️", ":
 export default function Chat() {
   const { family, view, familyLoading, refreshFamilies } = useFamily();
   const { user } = useAuth();
+  const { t, locale } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -334,7 +336,7 @@ export default function Chat() {
     return (
       <div className="page chat-page">
         <div className="page-head">
-          <h2>Family Chat</h2>
+          <h2>{t("familyChat", "Family Chat")}</h2>
         </div>
         <div className="card">
           <p className="empty">🔒 Chat is only available in <strong>Family</strong> view.</p>
@@ -357,7 +359,7 @@ export default function Chat() {
   if (!family) {
     return (
       <div className="page chat-page">
-        <div className="page-head"><h1>Family Chat</h1></div>
+        <div className="page-head"><h1>{t("familyChat", "Family Chat")}</h1></div>
         <div className="card empty-state chat-setup-state">
           <div className="empty-icon">💬</div>
           <h2>Connect a family before messaging</h2>
@@ -382,7 +384,7 @@ export default function Chat() {
   return (
     <div className="page chat-page">
       <div className="page-head">
-        <h2>Family Chat</h2>
+        <h2>{t("familyChat", "Family Chat")}</h2>
         <div className="chat-menu-wrap">
           <button
             type="button"
@@ -400,10 +402,10 @@ export default function Chat() {
           {conversationMenuOpen && (
             <div className="chat-action-menu conversation-menu" role="menu" onClick={(event) => event.stopPropagation()}>
               <button type="button" role="menuitem" onClick={() => { copyConversation(conversationMessages); setConversationMenuOpen(false); }}>
-                <Copy size={16} aria-hidden="true" /> Copy all messages
+                <Copy size={16} aria-hidden="true" /> {t("copyAll", "Copy all messages")}
               </button>
               <button type="button" role="menuitem" className="danger" onClick={() => { setConversationMenuOpen(false); deleteAll(); }}>
-                <Trash2 size={16} aria-hidden="true" /> Clear chat
+                <Trash2 size={16} aria-hidden="true" /> {t("clearChat", "Clear chat")}
               </button>
             </div>
           )}
@@ -422,7 +424,7 @@ export default function Chat() {
             </div>
           </div>
           <div className="sidebar-members">
-            <h4>Members</h4>
+            <h4>{t("members", "Members")}</h4>
             {family?.members?.map((m) => (
               <div className="sidebar-member" key={m.id}>
                 <span className="member-avatar" style={{ background: colorFor(m.user?.name) }}>
@@ -434,11 +436,11 @@ export default function Chat() {
             ))}
           </div>
           <div className="sidebar-note shared-expenses">
-            <h4>Shared expenses</h4>
+            <h4>{t("sharedExpenses", "Shared expenses")}</h4>
             {sharedExpenses.length > 0 ? sharedExpenses.map((expense) => (
               <div className="shared-expense" key={expense.id}>
                 <span>{expense.message.replace(/^💸\s*/, "")}</span>
-                <small>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ""}</small>
+                <small>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString(locale) : ""}</small>
               </div>
             )) : (
               <p>Expenses appear here only when “Share in family chat” is selected.</p>
@@ -485,7 +487,7 @@ export default function Chat() {
                         {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                       </span>
                       {isMe && (
-                        <span className="chat-delivered" aria-label="Delivered" title="Delivered">
+                        <span className="chat-delivered" aria-label={t("delivered", "Delivered")} title={t("delivered", "Delivered")}>
                           <CheckCheck size={14} aria-hidden="true" />
                         </span>
                       )}
@@ -507,11 +509,11 @@ export default function Chat() {
                       {messageMenuId === m.id && (
                         <div className="chat-action-menu message-menu" role="menu" onClick={(event) => event.stopPropagation()}>
                           <button type="button" role="menuitem" onClick={() => { copyMessage(m); setMessageMenuId(null); }}>
-                            <Copy size={15} aria-hidden="true" /> Copy message
+                            <Copy size={15} aria-hidden="true" /> {t("copyMessage", "Copy message")}
                           </button>
                           {isMe && (
                             <button type="button" role="menuitem" className="danger" onClick={() => { setMessageMenuId(null); deleteOne(m.id); }}>
-                              <Trash2 size={15} aria-hidden="true" /> Delete message
+                              <Trash2 size={15} aria-hidden="true" /> {t("deleteMessage", "Delete message")}
                             </button>
                           )}
                         </div>
@@ -521,9 +523,6 @@ export default function Chat() {
                 </div>
               );
             })}
-            {conversationMessages.length === 0 && (
-              <p className="empty">No messages yet. Say hi to your family! 👋</p>
-            )}
             <div ref={bottomRef} />
           </div>
 
@@ -573,7 +572,7 @@ export default function Chat() {
             {uploadingPhoto && <span className="recording-indicator">Sending picture…</span>}
 
             <label className="sr-only" htmlFor="chat-text">Message</label>
-            <input id="chat-text" placeholder="Type a message…" value={text} onChange={(e) => setText(e.target.value)} disabled={sending} />
+            <input id="chat-text" placeholder={t("typeMessage", "Type a message…")} value={text} onChange={(e) => setText(e.target.value)} disabled={sending} />
             <button className="btn primary" type="submit" disabled={sending}>{sending ? "…" : "➤"}</button>
           </form>
         </div>

@@ -15,6 +15,7 @@ import { useCurrency } from "../context/CurrencyContext.jsx";
 import { api } from "../api/client.js";
 import { apiView, currentMonth, money, todayISO } from "../utils/format.js";
 import { CATEGORIES } from "../utils/constants.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const initialForm = () => ({
   name: "",
@@ -28,6 +29,7 @@ const initialForm = () => ({
 export default function Expenses() {
   const { family, view } = useFamily();
   const { currency } = useCurrency();
+  const { t } = useLanguage();
   const [expenses, setExpenses] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [showForm, setShowForm] = useState(false);
@@ -101,12 +103,11 @@ export default function Expenses() {
     <div className="page expenses-page">
       <div className="page-head modern-head">
         <div>
-          <span className="eyebrow">{view === "family" ? "Family workspace" : "Single workspace"}</span>
-          <h1>Expenses</h1>
-          <p className="subtitle">Track, find and review your spending.</p>
+          <h1>{t("expenses", "Expenses")}</h1>
+          <p className="subtitle">{t("trackSpending", "Track, find and review your spending.")}</p>
         </div>
         <button className="btn primary" onClick={() => setShowForm(true)} type="button">
-          <Plus size={18} /> Add expense
+          <Plus size={18} /> {t("addExpense", "Add expense")}
         </button>
       </div>
 
@@ -123,7 +124,7 @@ export default function Expenses() {
           <label className="search-field">
             <Search size={18} aria-hidden="true" />
             <span className="sr-only">Search expenses</span>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search expenses" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchExpenses", "Search expenses")} />
           </label>
           <label className="compact-field">
             <CalendarDays size={17} />
@@ -134,7 +135,7 @@ export default function Expenses() {
             <SlidersHorizontal size={17} />
             <span className="sr-only">Category</span>
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option>All</option>
+              <option value="All">{t("all", "All")}</option>
               {Object.keys(CATEGORIES).map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
@@ -145,7 +146,7 @@ export default function Expenses() {
         {filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon"><ReceiptText size={28} /></div>
-            <h2>No expenses found</h2>
+            <h2>{t("noExpensesFound", "No expenses found")}</h2>
             <p>{expenses.length === 0 ? "Your expenses will appear here once you start tracking them." : "Try changing your search or filters."}</p>
             {expenses.length === 0 && (
               <button className="btn secondary" type="button" onClick={() => setShowForm(true)}>
@@ -159,12 +160,12 @@ export default function Expenses() {
               <table className="table modern-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    {view === "family" && <th>Added by</th>}
-                    <th>Category</th>
-                    <th className="num">Amount</th>
-                    <th><span className="sr-only">Actions</span></th>
+                    <th>{t("date", "Date")}</th>
+                    <th>{t("description", "Description")}</th>
+                    {view === "family" && <th>{t("addedBy", "Added by")}</th>}
+                    <th>{t("category", "Category")}</th>
+                    <th className="num">{t("amount", "Amount")}</th>
+                    <th><span className="sr-only">{t("actions", "Actions")}</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,8 +218,8 @@ export default function Expenses() {
           <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
             <div className="drawer-head">
               <div>
-                <span className="eyebrow">New transaction</span>
-                <h2 id="add-expense-title">Add expense</h2>
+                <span className="eyebrow">{t("newTransaction", "New transaction")}</span>
+                <h2 id="add-expense-title">{t("addExpense", "Add expense")}</h2>
               </div>
               <button className="icon-btn" type="button" onClick={() => setShowForm(false)} aria-label="Close">
                 <X size={20} />
@@ -227,7 +228,7 @@ export default function Expenses() {
 
             <form className="drawer-form" onSubmit={submit}>
               <label className="field">
-                <span>Description</span>
+                <span>{t("description", "Description")}</span>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Weekly groceries" required autoFocus />
               </label>
               <label className="field">
@@ -235,11 +236,11 @@ export default function Expenses() {
                 <input type="number" min="0" step="0.01" inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" required />
               </label>
               <label className="field">
-                <span>Date</span>
+                <span>{t("date", "Date")}</span>
                 <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
               </label>
               <label className="field">
-                <span>Category</span>
+                <span>{t("category", "Category")}</span>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                   {Object.keys(CATEGORIES).map((item) => <option key={item}>{item}</option>)}
                 </select>
@@ -249,7 +250,7 @@ export default function Expenses() {
                   <label className="privacy-option">
                     <div className="privacy-copy">
                       <LockKeyhole size={18} />
-                      <span><strong>Private expense</strong><small>Only you can see this expense.</small></span>
+                      <span><strong>{t("privateExpense", "Private expense")}</strong><small>Only you can see this expense.</small></span>
                     </div>
                     <input
                       type="checkbox"
@@ -261,7 +262,7 @@ export default function Expenses() {
                   <label className={`privacy-option ${form.isPrivate ? "is-disabled" : ""}`}>
                     <div className="privacy-copy">
                       <span aria-hidden="true">💬</span>
-                      <span><strong>Share in family chat</strong><small>Show this expense in the Family Chat sidebar.</small></span>
+                      <span><strong>{t("shareFamilyChat", "Share in family chat")}</strong><small>Show this expense in the Family Chat sidebar.</small></span>
                     </div>
                     <input
                       type="checkbox"
@@ -274,7 +275,7 @@ export default function Expenses() {
                 </>
               )}
               <div className="drawer-actions">
-                <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>Cancel</button>
+                <button className="btn ghost" type="button" onClick={() => setShowForm(false)}>{t("cancel", "Cancel")}</button>
                 <button className="btn primary" type="submit" disabled={submitting}>
                   <Plus size={18} /> {submitting ? "Adding…" : "Add expense"}
                 </button>

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 
@@ -17,6 +18,7 @@ function registrationErrorMessage(error) {
 
 export default function Register() {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,26 +56,26 @@ export default function Register() {
     <main className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <img src="/brand-mark.png" alt="Family Expense Tracker logo" className="auth-logo-img" />
-        <h1>Create account</h1>
+        <h1>{t("createAccount", "Create account")}</h1>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
 
         <label className="field">
-          <span>Name</span>
+          <span>{t("name", "Name")}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} minLength="1" maxLength="60" autoComplete="name" required />
         </label>
         <label className="field">
-          <span>Email</span>
+          <span>{t("email", "Email")}</span>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         </label>
         <label className="field">
-          <span>Password</span>
+          <span>{t("password", "Password")}</span>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength="8" maxLength="72" autoComplete="new-password" aria-describedby="password-rules" required />
           <small id="password-rules">8 to 72 characters with uppercase, lowercase, and a number</small>
         </label>
 
         <button className="btn primary" disabled={loading}>
-          {loading ? "Creating…" : "Create Account"}
+          {loading ? t("loading", "Loading…") : t("createAccount", "Create account")}
         </button>
         <p className="auth-links">
           <Link to="/login">Already have an account? Sign in</Link>

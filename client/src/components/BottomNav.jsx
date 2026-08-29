@@ -12,22 +12,24 @@ import {
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useFamily } from "../context/FamilyContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const sharedItems = [
-  { to: "/", Icon: Home, label: "Home" },
-  { to: "/expenses", Icon: ReceiptText, label: "Expenses" },
-  { to: "/calendar", Icon: CalendarDays, label: "Calendar" },
-  { to: "/shopping", Icon: ShoppingBasket, label: "Shopping" },
-  { to: "/settings", Icon: Settings, label: "Settings" },
+  { to: "/", Icon: Home, key: "home", label: "Home" },
+  { to: "/expenses", Icon: ReceiptText, key: "expenses", label: "Expenses" },
+  { to: "/calendar", Icon: CalendarDays, key: "calendar", label: "Calendar" },
+  { to: "/shopping", Icon: ShoppingBasket, key: "shopping", label: "Shopping" },
+  { to: "/settings", Icon: Settings, key: "settings", label: "Settings" },
 ];
 
 const familyItems = [
-  { to: "/chat", Icon: MessagesSquare, label: "Chat" },
-  { to: "/family", Icon: UsersRound, label: "Family" },
+  { to: "/chat", Icon: MessagesSquare, key: "chat", label: "Chat" },
+  { to: "/family", Icon: UsersRound, key: "family", label: "Family" },
 ];
 
 export default function BottomNav() {
   const { view } = useFamily();
+  const { t } = useLanguage();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const items = view === "family"
@@ -43,17 +45,17 @@ export default function BottomNav() {
       {view === "family" && moreOpen && (
         <div className="mobile-more-layer" role="presentation" onClick={() => setMoreOpen(false)}>
           <section className="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="More navigation" onClick={(event) => event.stopPropagation()}>
-            <div className="mobile-more-head"><strong>More</strong><button type="button" className="icon-btn" onClick={() => setMoreOpen(false)} aria-label="Close menu"><X size={20} /></button></div>
-            {moreItems.map(({ to, Icon, label }) => (
+            <div className="mobile-more-head"><strong>{t("more", "More")}</strong><button type="button" className="icon-btn" onClick={() => setMoreOpen(false)} aria-label="Close menu"><X size={20} /></button></div>
+            {moreItems.map(({ to, Icon, key, label }) => (
               <NavLink key={to} to={to} className={({ isActive }) => `mobile-more-link ${isActive ? "active" : ""}`}>
-                <Icon size={20} aria-hidden="true" /><span>{label}</span>
+                <Icon size={20} aria-hidden="true" /><span>{t(key, label)}</span>
               </NavLink>
             ))}
           </section>
         </div>
       )}
       <nav className="bottom-nav" aria-label="Main navigation">
-        {items.map(({ to, Icon, label }) => (
+        {items.map(({ to, Icon, key, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -62,13 +64,13 @@ export default function BottomNav() {
             className={({ isActive }) => `bn-item ${isActive ? "active" : ""}`}
           >
             <Icon className="bn-icon" size={20} strokeWidth={2} aria-hidden="true" />
-            <span className="bn-label">{label}</span>
+            <span className="bn-label">{t(key, label)}</span>
           </NavLink>
         ))}
         {view === "family" && (
           <button type="button" className={`bn-item bn-more ${moreActive || moreOpen ? "active" : ""}`} onClick={() => setMoreOpen((open) => !open)} aria-expanded={moreOpen} aria-label="More navigation">
             <Menu className="bn-icon" size={20} strokeWidth={2} aria-hidden="true" />
-            <span className="bn-label">More</span>
+            <span className="bn-label">{t("more", "More")}</span>
           </button>
         )}
       </nav>
