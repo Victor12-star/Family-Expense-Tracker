@@ -56,7 +56,8 @@ export default function Chat() {
     return typeof msg.message === "string" && msg.message.startsWith("data:image");
   }
   function isVoiceMessage(msg) {
-    return msg.isVoice === true;
+    return msg.isVoice === true
+      || (typeof msg.message === "string" && msg.message.startsWith("data:audio/"));
   }
   function isSystemMessage(msg) {
     if (typeof msg.message !== "string") return false;
