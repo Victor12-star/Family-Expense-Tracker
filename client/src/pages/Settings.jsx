@@ -194,7 +194,7 @@ function NotificationsPanel({ status, requestNotifications, sound, setSound, pre
 
 function SecurityPanel({ handleLogout }) {
   const { t } = useLanguage();
-  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title={t("security", "Security")} /><div className="settings-control-row"><strong>{t("currentSession", "Current session")}</strong><span className="status-pill"><CheckCircle2 size={14} /> {t("active", "Active")}</span></div><div className="settings-control-row"><strong>{t("logout", "Log out")}</strong><button className="btn settings-logout" type="button" onClick={handleLogout}>{t("logout", "Log out")}</button></div></div>;
+  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title={t("security", "Security")} /><div className="settings-control-row"><span className="status-pill"><CheckCircle2 size={14} /> {t("active", "Active")}</span><button className="btn settings-logout" type="button" onClick={handleLogout}>{t("logout", "Log out")}</button></div></div>;
 }
 
 function PrivacyPanel({ setLegalPanel }) {
