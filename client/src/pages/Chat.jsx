@@ -293,6 +293,11 @@ export default function Chat() {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file || !family) return;
+    if (file.size > 15 * 1024 * 1024) {
+      setNotice("This picture is too large. Choose an image smaller than 15 MB.");
+      e.target.value = "";
+      return;
+    }
     setUploadingPhoto(true);
     setNotice("");
     try {

@@ -1,7 +1,10 @@
 // =====================================================================
 // App — route definitions
 // =====================================================================
-import { Navigate, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -23,6 +26,26 @@ function FamilyOnlyRoute({ children }) {
 }
 
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    let listener;
+    let active = true;
+    CapacitorApp.addListener("backButton", () => {
+      if (location.pathname === "/" || location.pathname === "/login") {
+        CapacitorApp.minimizeApp();
+      } else {
+        navigate(-1);
+      }
+    }).then((handle) => {
+      if (active) listener = handle;
+      else handle.remove();
+    });
+    return () => { active = false; listener?.remove(); };
+  }, [location.pathname, navigate]);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

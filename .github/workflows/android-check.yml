@@ -1,0 +1,48 @@
+name: Android build check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and sync Android assets
+        run: npm run build:android
+
+      - name: Compile debug APK
+        run: ./gradlew assembleDebug
+        working-directory: client/android
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-expense-tracker-debug
+          path: client/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
