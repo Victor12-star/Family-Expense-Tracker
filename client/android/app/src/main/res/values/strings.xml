@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Family Expense Tracker</string>
+    <string name="title_activity_main">Family Expense Tracker</string>
+    <string name="package_name">com.victor.familyexpensetracker</string>
+    <string name="custom_url_scheme">com.victor.familyexpensetracker</string>
+</resources>
