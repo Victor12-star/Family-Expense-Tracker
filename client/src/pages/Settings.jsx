@@ -14,6 +14,7 @@ import {
   Scale,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -64,7 +65,7 @@ function applyTheme(theme) {
 }
 
 export default function Settings() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const { currency, changeCurrency } = useCurrency();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -74,6 +75,10 @@ export default function Settings() {
   const [a11y, setA11y] = useState(getAccessibilitySettings());
   const [legalPanel, setLegalPanel] = useState(null);
   const [notice, setNotice] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const notificationStatus = "Notification" in window ? Notification.permission : "unsupported";
 
   function showNotice(message) {
@@ -116,6 +121,20 @@ export default function Settings() {
     navigate("/login", { replace: true });
   }
 
+  async function handleDeleteAccount(event) {
+    event.preventDefault();
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteAccount(deletePassword);
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setDeleteError(error?.response?.data?.message || "Account deletion failed. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="page settings-page">
       <div className="modern-head settings-head">
@@ -141,10 +160,10 @@ export default function Settings() {
         </nav>
 
         {activeSection && <section className="settings-content" id="settings-detail">
-          {activeSection === "account" && <AccountPanel user={user} />}
+          {activeSection === "account" && <AccountPanel user={user} handleLogout={handleLogout} openDelete={() => { setDeletePassword(""); setDeleteError(""); setDeleteOpen(true); }} />}
           {activeSection === "preferences" && <PreferencesPanel currency={currency} changeCurrency={changeCurrency} theme={theme} handleThemeChange={handleThemeChange} />}
           {activeSection === "notifications" && <NotificationsPanel status={notificationStatus} requestNotifications={requestNotifications} sound={sound} setSound={setSound} previewSound={previewSound} />}
-          {activeSection === "security" && <SecurityPanel handleLogout={handleLogout} />}
+          {activeSection === "security" && <SecurityPanel />}
           {activeSection === "privacy" && <PrivacyPanel setLegalPanel={setLegalPanel} />}
           {activeSection === "accessibility" && <AccessibilityPanel a11y={a11y} handleA11yChange={handleA11yChange} />}
           {activeSection === "about" && <AboutPanel setLegalPanel={setLegalPanel} />}
@@ -169,6 +188,19 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+
+      {deleteOpen && (
+        <div className="modal-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false); }}>
+          <form className="modal-card account-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" onSubmit={handleDeleteAccount}>
+            <div className="drawer-head"><h2 id="delete-account-title">Delete account</h2><button type="button" className="icon-btn" onClick={() => setDeleteOpen(false)} disabled={deleting} aria-label="Close"><X size={20} /></button></div>
+            <p>This permanently removes your account and associated data. This action cannot be undone.</p>
+            <label><span>Confirm your password</span><input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>
+            {deleteError && <div className="notice error" role="alert">{deleteError}</div>}
+            <div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</button><button type="submit" className="btn danger" disabled={deleting || !deletePassword}>{deleting ? "Deleting…" : "Delete account"}</button></div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
@@ -177,9 +209,9 @@ function PanelHead({ Icon, title }) {
   return <div className="settings-panel-head"><Icon size={20} /><h2>{title}</h2></div>;
 }
 
-function AccountPanel({ user }) {
+function AccountPanel({ user, handleLogout, openDelete }) {
   const { t } = useLanguage();
-  return <div className="settings-panel"><PanelHead Icon={UserRound} title={t("account", "Account")} /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong></div></div></div>;
+  return <div className="settings-panel"><PanelHead Icon={UserRound} title={t("account", "Account")} /><div className="account-summary"><span className="account-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</span><div><strong>{user?.name || "User"}</strong></div></div><div className="account-actions"><div className="settings-control-row"><span><strong>{t("logout", "Log out")}</strong></span><button className="btn settings-logout" type="button" onClick={handleLogout}>{t("logout", "Log out")}</button></div><div className="settings-control-row account-danger-row"><span><strong>Delete account</strong><small>Permanently remove your account and data</small></span><button className="btn danger" type="button" onClick={openDelete}><Trash2 size={16} aria-hidden="true" /> Delete account</button></div></div></div>;
 }
 
 function PreferencesPanel({ currency, changeCurrency, theme, handleThemeChange }) {
@@ -192,9 +224,9 @@ function NotificationsPanel({ status, requestNotifications, sound, setSound, pre
   return <div className="settings-panel"><PanelHead Icon={Bell} title={t("notifications", "Notifications")} /><div className="settings-control-row"><span><strong>{t("browserNotifications", "Browser notifications")}</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><strong>{t("reminderSound", "Reminder sound")}</strong><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>{t("preview", "Preview")}</button></div></div></div>;
 }
 
-function SecurityPanel({ handleLogout }) {
+function SecurityPanel() {
   const { t } = useLanguage();
-  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title={t("security", "Security")} /><div className="settings-control-row"><span className="status-pill"><CheckCircle2 size={14} /> {t("active", "Active")}</span><button className="btn settings-logout" type="button" onClick={handleLogout}>{t("logout", "Log out")}</button></div></div>;
+  return <div className="settings-panel"><PanelHead Icon={ShieldCheck} title={t("security", "Security")} /><div className="settings-control-row"><span><strong>Session status</strong></span><span className="status-pill"><CheckCircle2 size={14} /> {t("active", "Active")}</span></div></div>;
 }
 
 function PrivacyPanel({ setLegalPanel }) {
