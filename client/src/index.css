@@ -2442,40 +2442,85 @@ button:disabled {
 }
 
 /* Calendar */
-.reminder-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 14px 16px;
-}
-
-.reminder-sound-control {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-}
-
-.reminder-sound-control label {
+.page-head-actions,
+.calendar-tools {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.reminder-sound-control label > span {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
+.calendar-tools-trigger {
+  width: 40px;
+  height: 40px;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: var(--panel);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, .1);
 }
 
-.reminder-sound-control select {
+.calendar-tools-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 45;
+  width: min(310px, calc(100vw - 28px));
+  padding: 10px;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .18);
+}
+
+.calendar-tool-field {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  color: var(--accent);
+}
+
+.calendar-tool-field label {
+  display: grid;
+  gap: 6px;
+}
+
+.calendar-tool-field span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.calendar-tool-field select {
+  width: 100%;
   min-height: 38px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--panel-strong);
   color: var(--text);
   padding: 0 10px;
+}
+
+.calendar-tool-action {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-tool-action:hover,
+.calendar-tool-action:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .calendar-layout {
@@ -2488,6 +2533,11 @@ button:disabled {
 .calendar-card,
 .upcoming-card {
   padding: 20px;
+}
+
+.calendar-card {
+  overflow: hidden;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 46%, var(--panel)), var(--panel) 36%);
 }
 
 .calendar-head {
@@ -2520,14 +2570,16 @@ button:disabled {
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
-  padding: 8px 0;
+  padding: 10px 0;
+  color: color-mix(in srgb, var(--accent) 72%, var(--muted));
 }
 
 .calendar-grid {
   border-top: 1px solid var(--border);
   border-left: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 9px 24px rgba(37, 99, 235, .06);
 }
 
 .calendar-day {
@@ -2536,7 +2588,7 @@ button:disabled {
   border: 0;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background: var(--panel);
+  background: color-mix(in srgb, var(--panel) 96%, var(--accent-soft));
   color: var(--text);
   cursor: pointer;
   text-align: left;
@@ -2544,7 +2596,14 @@ button:disabled {
 }
 
 .calendar-day:hover {
-  background: var(--panel-strong);
+  z-index: 1;
+  background: color-mix(in srgb, var(--accent-soft) 58%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.calendar-day.has-reminders:not(.today) > span {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .calendar-day.outside {
@@ -2578,8 +2637,9 @@ button:disabled {
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  box-shadow: 0 5px 12px rgba(37, 99, 235, .2);
 }
 
 .upcoming-card .card-head {
@@ -3068,12 +3128,18 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .reminder-toolbar,
-  .reminder-sound-control,
-  .reminder-sound-control label,
   .shopping-footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .calendar-tools-menu {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
   }
 
   .calendar-card,
