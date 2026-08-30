@@ -6,13 +6,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  MoreVertical,
   Plus,
   Repeat2,
   Trash2,
   Volume2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFamily } from "../context/FamilyContext.jsx";
 import { api } from "../api/client.js";
 import { todayISO } from "../utils/format.js";
@@ -51,6 +52,22 @@ export default function Calendar() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsRef = useRef(null);
+
+  useEffect(() => {
+    function closeTools(event) {
+      if (event.key === "Escape" || (event.type === "pointerdown" && !toolsRef.current?.contains(event.target))) {
+        setToolsOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", closeTools);
+    document.addEventListener("keydown", closeTools);
+    return () => {
+      document.removeEventListener("pointerdown", closeTools);
+      document.removeEventListener("keydown", closeTools);
+    };
+  }, []);
 
   async function load() {
     if (view === "family" && !family) {
@@ -160,35 +177,43 @@ export default function Calendar() {
           <h1>{t("calendarReminders", "Calendar & reminders")}</h1>
           <p className="subtitle">{t("calendarSubtitle", "Keep bills, appointments and important dates in view.")}</p>
         </div>
-        <button className="btn primary" type="button" onClick={() => { setFormError(""); setShowForm(true); }}>
-          <Plus size={18} /> {t("addReminder", "Add reminder")}
-        </button>
+        <div className="page-head-actions">
+          <button className="btn primary" type="button" onClick={() => { setFormError(""); setShowForm(true); }}>
+            <Plus size={18} /> {t("addReminder", "Add reminder")}
+          </button>
+          <div className="calendar-tools" ref={toolsRef}>
+            <button className="icon-btn calendar-tools-trigger" type="button" aria-label="Reminder options" aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen((open) => !open)}>
+              <MoreVertical size={20} />
+            </button>
+            {toolsOpen && (
+              <section className="calendar-tools-menu card" role="menu" aria-label="Reminder options">
+                <div className="calendar-tool-field">
+                  <Volume2 size={18} aria-hidden="true" />
+                  <label>
+                    <span>{t("reminderSound", "Reminder sound")}</span>
+                    <select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}>
+                      <option value="soft">Soft chime</option>
+                      <option value="bell">Gentle bell</option>
+                      <option value="digital">Digital</option>
+                      <option value="none">None</option>
+                    </select>
+                  </label>
+                </div>
+                <button className="calendar-tool-action" type="button" role="menuitem" onClick={async () => {
+                  const played = await playReminderChime(sound);
+                  setNotice(played ? "Sound is enabled." : "Your browser blocked sound. Click the page once and try Preview again.");
+                  window.setTimeout(() => setNotice(""), 4000);
+                }}><Volume2 size={17} /> {t("preview", "Preview sound")}</button>
+                <button className="calendar-tool-action" type="button" role="menuitem" onClick={requestNotifications}>
+                  <Bell size={17} /> {t("browserNotifications", "Browser notifications")}
+                </button>
+              </section>
+            )}
+          </div>
+        </div>
       </div>
 
       {notice && <div className="success-banner page-notice" role="status">{notice}</div>}
-
-      <section className="reminder-toolbar card">
-        <div className="reminder-sound-control">
-          <Volume2 size={18} />
-          <label>
-            <span>{t("reminderSound", "Reminder sound")}</span>
-            <select value={sound} onChange={(e) => { setSound(e.target.value); localStorage.setItem(SOUND_KEY, e.target.value); }}>
-              <option value="soft">Soft chime</option>
-              <option value="bell">Gentle bell</option>
-              <option value="digital">Digital</option>
-              <option value="none">None</option>
-            </select>
-          </label>
-          <button className="btn ghost" type="button" onClick={async () => {
-            const played = await playReminderChime(sound);
-            setNotice(played ? "Sound is enabled." : "Your browser blocked sound. Click the page once and try Preview again.");
-            window.setTimeout(() => setNotice(""), 4000);
-          }}>{t("preview", "Preview")}</button>
-        </div>
-        <button className="btn ghost" type="button" onClick={requestNotifications}>
-          <Bell size={17} /> {t("browserNotifications", "Browser notifications")}
-        </button>
-      </section>
 
       <div className="calendar-layout">
         <section className="card calendar-card">
@@ -214,7 +239,7 @@ export default function Calendar() {
               const today = key === todayISO();
               return (
                 <button
-                  className={`calendar-day ${outside ? "outside" : ""} ${today ? "today" : ""}`}
+                  className={`calendar-day ${outside ? "outside" : ""} ${today ? "today" : ""} ${dayReminders.length ? "has-reminders" : ""}`}
                   key={key}
                   type="button"
                   onClick={() => { setForm((current) => ({ ...current, date: key })); setShowForm(true); }}
