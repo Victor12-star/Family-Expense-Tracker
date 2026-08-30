@@ -6,7 +6,7 @@ import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
 import { authLimiter } from "../middleware/security.js";
 import { requireAuth } from "../middleware/auth.js";
-import { register, login, refresh, logout, me } from "../controllers/auth.controller.js";
+import { register, login, refresh, logout, me, removeAccount } from "../controllers/auth.controller.js";
 
 const router = Router();
 router.use(authLimiter);
@@ -46,5 +46,11 @@ router.post(
 );
 
 router.get("/me", requireAuth, me);
+router.delete(
+  "/account",
+  requireAuth,
+  validate([body("password").isString().notEmpty().withMessage("Password is required")]),
+  removeAccount
+);
 
 export default router;
