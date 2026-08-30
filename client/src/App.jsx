@@ -14,6 +14,7 @@ import Family from "./pages/Family.jsx";
 import Join from "./pages/Join.jsx";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { AccountDeletion, PrivacyPolicy, TermsOfUse } from "./pages/Legal.jsx";
 import { useFamily } from "./context/FamilyContext.jsx";
 
 function FamilyOnlyRoute({ children }) {
@@ -27,6 +28,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/join/:code" element={<Join />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfUse />} />
+      <Route path="/account-deletion" element={<AccountDeletion />} />
 
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />

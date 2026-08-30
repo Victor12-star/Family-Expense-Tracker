@@ -26,6 +26,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -79,7 +80,12 @@ export default function Register() {
           <small id="password-rules">8 to 72 characters with uppercase, lowercase, and a number</small>
         </label>
 
-        <button className="btn primary" disabled={loading || Boolean(success)}>
+        <label className="legal-consent">
+          <input type="checkbox" checked={acceptedLegal} onChange={(e) => setAcceptedLegal(e.target.checked)} required disabled={Boolean(success)} />
+          <span>I agree to the <Link to="/terms" target="_blank" rel="noreferrer">Terms of Use</Link> and acknowledge the <Link to="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>.</span>
+        </label>
+
+        <button className="btn primary" disabled={loading || Boolean(success) || !acceptedLegal}>
           {success ? "Account created" : loading ? t("loading", "Loading…") : t("createAccount", "Create account")}
         </button>
         <p className="auth-links">

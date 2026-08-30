@@ -3,7 +3,7 @@
 // Controls are shown only when they perform a real action in this release.
 // =====================================================================
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Accessibility,
   Bell,
@@ -231,7 +231,7 @@ function SecurityPanel() {
 
 function PrivacyPanel({ setLegalPanel }) {
   const { t } = useLanguage();
-  return <div className="settings-panel"><PanelHead Icon={FileText} title={t("privacyData", "Privacy & Data")} /><button className="settings-link-card" type="button" onClick={() => setLegalPanel("privacy")}><FileText size={18} /><span><strong>{t("privacy", "Privacy")}</strong></span></button><button className="settings-link-card" type="button" onClick={() => setLegalPanel("terms")}><Scale size={18} /><span><strong>{t("terms", "Terms of use")}</strong></span></button></div>;
+  return <div className="settings-panel"><PanelHead Icon={FileText} title={t("privacyData", "Privacy & Data")} /><Link className="settings-link-card" to="/privacy"><FileText size={18} /><span><strong>{t("privacy", "Privacy")}</strong></span></Link><Link className="settings-link-card" to="/terms"><Scale size={18} /><span><strong>{t("terms", "Terms of use")}</strong></span></Link><Link className="settings-link-card" to="/account-deletion"><UserRound size={18} /><span><strong>Account deletion</strong></span></Link></div>;
 }
 
 function AccessibilityPanel({ a11y, handleA11yChange }) {
