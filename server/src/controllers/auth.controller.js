@@ -1,7 +1,7 @@
 // =====================================================================
 // Auth controller
 // =====================================================================
-import { registerUser, loginUser, refreshAccessToken, logoutUser } from "../services/auth.service.js";
+import { registerUser, loginUser, refreshAccessToken, logoutUser, deleteUserAccount } from "../services/auth.service.js";
 import { createError } from "../utils/apiError.js";
 
 export async function register(req, res, next) {
@@ -45,4 +45,13 @@ export async function logout(req, res, next) {
 
 export async function me(req, res) {
   res.json({ user: req.user });
+}
+
+export async function removeAccount(req, res, next) {
+  try {
+    await deleteUserAccount(req.user.id, req.body.password);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
 }

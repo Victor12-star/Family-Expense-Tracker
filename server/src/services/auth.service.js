@@ -81,3 +81,32 @@ export async function logoutUser(rawToken) {
   const hash = hashToken(rawToken);
   await prisma.refreshToken.updateMany({ where: { tokenHash: hash }, data: { revoked: true } });
 }
+
+export async function deleteUserAccount(userId, password) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw createError(404, "Account not found", "USER_NOT_FOUND");
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) throw createError(401, "Password is incorrect", "INVALID_PASSWORD");
+
+  await prisma.$transaction(async (tx) => {
+    const ownedFamilies = await tx.family.findMany({ where: { ownerId: userId } });
+
+    for (const family of ownedFamilies) {
+      const successor = await tx.membership.findFirst({
+        where: { familyId: family.id, userId: { not: userId } },
+        orderBy: { joinedAt: "asc" },
+      });
+
+      if (successor) {
+        await tx.family.update({ where: { id: family.id }, data: { ownerId: successor.userId } });
+        await tx.membership.update({ where: { id: successor.id }, data: { role: "OWNER" } });
+      } else {
+        await tx.family.delete({ where: { id: family.id } });
+      }
+    }
+
+    await tx.refreshToken.deleteMany({ where: { userId } });
+    await tx.user.delete({ where: { id: userId } });
+  });
+}
