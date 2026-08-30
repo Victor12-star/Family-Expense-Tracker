@@ -24,6 +24,7 @@ import { CURRENCIES, CURRENCY_CODES } from "../utils/constants.js";
 import { playReminderChime } from "../utils/reminderAudio.js";
 import { getAccessibilitySettings, setAccessibilitySetting } from "../utils/accessibility.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { isNativeApp, requestReminderPermission } from "../utils/nativeNotifications.js";
 
 const SOUND_KEY = "fet_reminder_sound";
 const THEME_KEY = "fet_theme";
@@ -79,7 +80,7 @@ export default function Settings() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const notificationStatus = "Notification" in window ? Notification.permission : "unsupported";
+  const notificationStatus = isNativeApp ? "available" : "Notification" in window ? Notification.permission : "unsupported";
 
   function showNotice(message) {
     setNotice(message);
@@ -103,12 +104,8 @@ export default function Settings() {
   }
 
   async function requestNotifications() {
-    if (!("Notification" in window)) {
-      showNotice("Browser notifications are not supported on this device.");
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    showNotice(permission === "granted" ? "Browser notifications are enabled." : "Browser notifications were not enabled.");
+    const permission = await requestReminderPermission();
+    showNotice(permission === "granted" ? "Notifications are enabled." : permission === "unsupported" ? "Notifications are not supported on this device." : "Notifications were not enabled.");
   }
 
   async function previewSound() {
@@ -221,7 +218,7 @@ function PreferencesPanel({ currency, changeCurrency, theme, handleThemeChange }
 
 function NotificationsPanel({ status, requestNotifications, sound, setSound, previewSound }) {
   const { t } = useLanguage();
-  return <div className="settings-panel"><PanelHead Icon={Bell} title={t("notifications", "Notifications")} /><div className="settings-control-row"><span><strong>{t("browserNotifications", "Browser notifications")}</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><strong>{t("reminderSound", "Reminder sound")}</strong><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>{t("preview", "Preview")}</button></div></div></div>;
+  return <div className="settings-panel"><PanelHead Icon={Bell} title={t("notifications", "Notifications")} /><div className="settings-control-row"><span><strong>{t("browserNotifications", "Notifications")}</strong><small className="settings-status">{status === "granted" ? "Allowed" : status === "available" ? "Available" : status === "denied" ? "Blocked" : status === "unsupported" ? "Not supported" : "Not enabled"}</small></span>{status !== "unsupported" && <button className="btn secondary small" type="button" onClick={requestNotifications}>{status === "granted" ? "Check" : "Allow"}</button>}</div><div className="settings-control-row"><strong>{t("reminderSound", "Reminder sound")}</strong><div className="settings-inline-control"><select value={sound} onChange={(event) => { setSound(event.target.value); localStorage.setItem(SOUND_KEY, event.target.value); }}><option value="soft">Soft chime</option><option value="bell">Gentle bell</option><option value="digital">Digital</option><option value="none">None</option></select><button className="btn secondary small" type="button" onClick={previewSound}>{t("preview", "Preview")}</button></div></div></div>;
 }
 
 function SecurityPanel() {

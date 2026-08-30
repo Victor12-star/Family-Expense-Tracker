@@ -19,6 +19,7 @@ import { api } from "../api/client.js";
 import { todayISO } from "../utils/format.js";
 import { playReminderChime } from "../utils/reminderAudio.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { cancelNativeReminder, cancelNativeReminders, requestReminderPermission, scheduleNativeReminder } from "../utils/nativeNotifications.js";
 
 const SOUND_KEY = "fet_reminder_sound";
 const initialForm = () => ({
@@ -98,7 +99,7 @@ export default function Calendar() {
     setFormError("");
     setSaving(true);
     try {
-      await api.post("/reminders", {
+      const response = await api.post("/reminders", {
         view,
         familyId: view === "family" ? family?.id : null,
         title: form.title.trim(),
@@ -109,11 +110,12 @@ export default function Calendar() {
         remindBeforeMinutes: Number(form.remindBeforeMinutes || 0),
         sound,
       });
+      const nativeScheduled = await scheduleNativeReminder(response.data).catch(() => false);
       setForm(initialForm());
       setShowForm(false);
       await load();
       window.dispatchEvent(new Event("fet:reminders-changed"));
-      setNotice("Reminder added successfully.");
+      setNotice(nativeScheduled ? "Reminder added and device notification scheduled." : "Reminder added successfully.");
       window.setTimeout(() => setNotice(""), 4000);
     } catch (error) {
       setFormError(error.response?.data?.message || "The reminder could not be added. Please try again.");
@@ -125,6 +127,7 @@ export default function Calendar() {
   async function remove(id) {
     if (!window.confirm("Delete this reminder?")) return;
     await api.delete(`/reminders/${id}`);
+    await cancelNativeReminder(id).catch(() => {});
     await load();
     window.dispatchEvent(new Event("fet:reminders-changed"));
   }
@@ -132,16 +135,15 @@ export default function Calendar() {
   async function clearMine() {
     if (!reminders.length || !window.confirm("Clear all reminders you created in this workspace? This cannot be undone.")) return;
     await api.post("/reminders/clear", { view, familyId: view === "family" ? family?.id : null });
+    await cancelNativeReminders(reminders).catch(() => {});
     await load();
     window.dispatchEvent(new Event("fet:reminders-changed"));
   }
 
   async function requestNotifications() {
-    if (!("Notification" in window)) {
-      alert("Browser notifications are not supported on this device.");
-      return;
-    }
-    if (Notification.permission === "default") await Notification.requestPermission();
+    const permission = await requestReminderPermission();
+    setNotice(permission === "granted" ? "Notifications are enabled." : permission === "unsupported" ? "Notifications are not supported on this device." : "Notifications were not enabled.");
+    window.setTimeout(() => setNotice(""), 4000);
   }
 
   const calendarDays = useMemo(() => {
